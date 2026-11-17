@@ -687,55 +687,57 @@
       const transactions = [];
       let currentStore = null;
       const categories = new Set(['FUNGISIDA', 'HERBISIDA', 'INSEKTISIDA', 'PUPUK', 'PUPUK CAIR', 'RODENTISIDA', 'ZPT', 'MOLUKUSIDA', 'PESTISIDA', 'PEREKAT', 'BENIH', 'BAKTERISIDA', 'AKARISIDA', 'ALAT PERTANIAN', 'EMULGATOR', 'PLASTIK', 'POMPA', 'SPAREPART']);
+      const skipPrefixes = ['Nama Pelanggan', 'No. Faktur', 'Rincian Penjualan', 'Dari ', 'Total ', 'Subtotal', 'PT.', 'PT '];
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (!row || row.length === 0) continue;
 
-        const nonEmpty = row.map(c => String(c ?? '').trim()).filter(c => c !== '');
+        const cells = row.map(c => String(c ?? '').trim());
+        const nonEmpty = cells.filter(c => c !== '');
         if (nonEmpty.length === 0) continue;
 
-        // Skip header rows
-        if (nonEmpty[0] === 'Nama Pelanggan' || nonEmpty[0] === 'No. Faktur' || nonEmpty[0].startsWith('Rincian Penjualan') || nonEmpty[0].startsWith('Dari ')) continue;
+        // Skip header & summary rows
+        if (skipPrefixes.some(p => nonEmpty[0].startsWith(p))) continue;
 
-        // Jika hanya ada 1 kolom terisi -> kemungkinan Nama Pelanggan (ALL CAPS) atau Kategori
-        if (nonEmpty.length === 1) {
-          const val = nonEmpty[0];
-          if (!categories.has(val.toUpperCase()) && isNaN(cleanNumber(val.replace(/\./g, '')))) {
-            currentStore = val;
-          }
-          continue;
+        // Deteksi Nama Pelanggan di Kolom 0 (jika bukan angka/tanggal dan bukan kategori)
+        const col0 = cells[0];
+        if (col0 && !categories.has(col0.toUpperCase()) && !parseAccurateDate(col0) && isNaN(cleanNumber(col0.replace(/\./g, '')))) {
+          currentStore = col0;
         }
 
-        // Format Excel baru (2025-NOV26 PENJUALAN.xls): Kolom 0 = Nama Pelanggan, Kolom 2 = No. Faktur, Kolom 4 = Tgl Faktur, Kolom 5 = Keterangan Barang, Kolom 6 = Kuantitas, Kolom 7 = Satuan, Kolom 8 = Total Harga, Kolom 9 = Nama Penjual
-        if (row.length >= 8 && String(row[2]).trim() !== '' && String(row[5]).trim() !== '' && parseAccurateDate(row[4])) {
-          const storeName = String(row[0]).trim() || currentStore;
-          const dateObj = parseAccurateDate(row[4]);
-          const itemDesc = String(row[5]).trim();
-          const qty = row[6];
-          const unit = String(row[7]).trim();
-          const totalHarga = cleanNumber(row[8]);
-          const salesName = String(row[9] || '').trim();
-
-          if (storeName && dateObj) {
-            currentStore = storeName;
-            transactions.push({ storeName, dateObj, itemDesc, qty, unit, totalHarga, salesName });
+        // Cari posisi kolom Tanggal Faktur secara dinamis (karena merged cell Accurate bisa menggeser indeks kolom)
+        let dateColIdx = -1;
+        let parsedDate = null;
+        for (let c = 0; c < Math.min(cells.length, 7); c++) {
+          if (c === 0 && cells[0] === currentStore) continue;
+          const d = parseAccurateDate(cells[c]);
+          if (d) {
+            dateColIdx = c;
+            parsedDate = d;
+            break;
           }
-          continue;
         }
 
-        // Format CSV Accurate lama: nonEmpty >= 6 [NoFaktur, TglFaktur, Barang, Qty, Satuan, TotalHarga, Sales]
-        if (nonEmpty.length >= 6 && currentStore) {
-          const dateObj = parseAccurateDate(nonEmpty[1]);
-          if (dateObj) {
+        // Jika baris ini adalah baris transaksi (punya tanggal faktur valid & nama toko aktif)
+        if (parsedDate && currentStore && dateColIdx !== -1) {
+          // Struktur standar Accurate setelah Tanggal Faktur:
+          // [dateColIdx] = Tgl Faktur, [+1] = Keterangan Barang, [+2] = Kuantitas, [+3] = Satuan, [+4] = Total Harga, [+5] = Nama Penjual
+          const itemDesc = cells[dateColIdx + 1] || '';
+          const qty = cells[dateColIdx + 2] || 0;
+          const unit = cells[dateColIdx + 3] || '';
+          const totalHarga = cleanNumber(cells[dateColIdx + 4]);
+          const salesName = cells[dateColIdx + 5] || '';
+
+          if (itemDesc) {
             transactions.push({
               storeName: currentStore,
-              dateObj,
-              itemDesc: nonEmpty[2],
-              qty: nonEmpty[3],
-              unit: nonEmpty[4],
-              totalHarga: cleanNumber(nonEmpty[5]),
-              salesName: nonEmpty[6] || ''
+              dateObj: parsedDate,
+              itemDesc,
+              qty,
+              unit,
+              totalHarga,
+              salesName
             });
           }
         }
@@ -743,18 +745,15 @@
       return transactions;
     }
 
-    // Agregasi per toko untuk periode Jul-Des 2025 dan Jul-Des 2026
+    // Agregasi per toko untuk periode Jul-Des 2025 dan Jul-Des 2026 (Semua pelanggan tetap tercatat)
     function aggregateByStore(transactions) {
       const storeMap = {};
       const unmappedSet = new Set();
 
       transactions.forEach(tx => {
         const { storeName, dateObj, itemDesc, qty, unit, totalHarga, salesName } = tx;
-        const isJulDec2025 = (dateObj.year === 2025 && dateObj.month >= 7 && dateObj.month <= 12);
-        const isJulDec2026 = (dateObj.year === 2026 && dateObj.month >= 7 && dateObj.month <= 12);
 
-        if (!isJulDec2025 && !isJulDec2026) return;
-
+        // Pastikan SEMUA toko yang ada di file masuk ke daftar (tidak hilang walau belum belanja di Jul-Des)
         if (!storeMap[storeName]) {
           storeMap[storeName] = {
             name: storeName,
@@ -763,6 +762,11 @@
           };
         }
         if (salesName) storeMap[storeName].sales.add(salesName);
+
+        const isJulDec2025 = (dateObj.year === 2025 && dateObj.month >= 7 && dateObj.month <= 12);
+        const isJulDec2026 = (dateObj.year === 2026 && dateObj.month >= 7 && dateObj.month <= 12);
+
+        if (!isJulDec2025 && !isJulDec2026) return;
 
         const mapped = mapAccurateItemToNSEP(itemDesc, unit, qty);
         if (!mapped) {
@@ -801,7 +805,7 @@
       }
 
       document.getElementById('activeDataStats').textContent =
-        `Total ${state.stores.length} Pelanggan Aktif di Periode Jul–Des (2025 & 2026)`;
+        `Total ${state.stores.length} Pelanggan Terdeteksi (Audit Periode Jul–Des 2025 & 2026)`;
     }
 
     function renderUnmappedAlert() {
