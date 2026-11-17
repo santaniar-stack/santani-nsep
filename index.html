@@ -54,12 +54,51 @@
 
       <!-- Tier Switcher & Upload Trigger -->
       <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Period Range Selector (Komparasi Bulan 2025 vs 2026) -->
+        <div id="periodSelectorBox" class="hidden bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-700 flex items-center gap-1.5">
+          <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Periode:</span>
+          <select id="startMonthSelect" onchange="changeEvaluationPeriod()" class="bg-slate-900 text-white text-xs font-bold rounded-lg px-2 py-1 border border-slate-700 focus:outline-none focus:border-emerald-500">
+            <option value="1">Jan</option>
+            <option value="2">Feb</option>
+            <option value="3">Mar</option>
+            <option value="4">Apr</option>
+            <option value="5">Mei</option>
+            <option value="6">Jun</option>
+            <option value="7" selected>Jul</option>
+            <option value="8">Agu</option>
+            <option value="9">Sep</option>
+            <option value="10">Okt</option>
+            <option value="11">Nop</option>
+            <option value="12">Des</option>
+          </select>
+          <span class="text-xs text-slate-400 font-bold">–</span>
+          <select id="endMonthSelect" onchange="changeEvaluationPeriod()" class="bg-slate-900 text-white text-xs font-bold rounded-lg px-2 py-1 border border-slate-700 focus:outline-none focus:border-emerald-500">
+            <option value="1">Jan</option>
+            <option value="2">Feb</option>
+            <option value="3">Mar</option>
+            <option value="4">Apr</option>
+            <option value="5">Mei</option>
+            <option value="6">Jun</option>
+            <option value="7">Jul</option>
+            <option value="8">Agu</option>
+            <option value="9">Sep</option>
+            <option value="10">Okt</option>
+            <option value="11">Nop</option>
+            <option value="12" selected>Des</option>
+          </select>
+        </div>
+
         <!-- Export Excel Rekap Button -->
         <button id="btnExportExcel" onclick="exportToExcel()" class="hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white text-xs font-bold shadow transition-all">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           <span>Export Excel</span>
+        </button>
+
+        <!-- AI Config Button (Untuk GitHub Pages / Custom API Key) -->
+        <button onclick="openAiKeyModal()" id="btnAiConfig" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-xs font-bold shadow transition-all" title="Atur Gemini API Key untuk GitHub Pages">
+          <span>✨ AI Engine</span>
         </button>
 
         <!-- Default Tier untuk Toko Baru -->
@@ -74,13 +113,19 @@
         </div>
 
         <!-- Upload New File Button -->
-        <label for="fileInput" class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-slate-900 hover:bg-slate-100 active:scale-[0.99] text-xs font-bold shadow transition-all">
+        <label for="fileInput" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-slate-900 hover:bg-slate-100 active:scale-[0.99] text-xs font-bold shadow transition-all" title="Ganti seluruh data dengan file baru">
           <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
           </svg>
-          <span>Upload Data Accurate</span>
+          <span>Upload Baru</span>
         </label>
-        <input id="fileInput" type="file" accept=".xls,.xlsx,.csv" class="hidden" onchange="handleFileUpload(event)" />
+        <input id="fileInput" type="file" accept=".xls,.xlsx,.csv" multiple class="hidden" onchange="handleFileUpload(event, false)" />
+
+        <!-- Merge / Append Per-Sales File Button -->
+        <label for="mergeFileInput" class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 text-slate-950 hover:bg-amber-300 active:scale-[0.99] text-xs font-bold shadow transition-all" title="Gabungkan file export per-sales ke data yang sudah ada">
+          <span>➕ Gabung File Sales</span>
+        </label>
+        <input id="mergeFileInput" type="file" accept=".xls,.xlsx,.csv" multiple class="hidden" onchange="handleFileUpload(event, true)" />
       </div>
     </div>
   </header>
@@ -109,7 +154,7 @@
           Mendukung format <span class="font-semibold text-slate-700">.xls</span>, <span class="font-semibold text-slate-700">.xlsx</span>, maupun <span class="font-semibold text-slate-700">.csv</span> (seperti <code class="bg-slate-100 px-1.5 py-0.5 rounded text-xs">2025-NOV26 PENJUALAN.xls</code>). Sistem otomatis membaca periode Jul–Des 2025 & 2026 serta mengonversi satuan kemasan ke Kg/Liter.
         </p>
         <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold shadow hover:bg-slate-800">
-          Pilih File dari Komputer / HP
+          Pilih File (Bisa Pilih Banyak File Per-Sales Sekaligus)
         </div>
       </div>
 
@@ -311,6 +356,36 @@
     </div>
   </div>
 
+  <!-- MODAL GEMINI API KEY (AMAN DISIMPAN LOKAL DI BROWSER USER) -->
+  <div id="aiKeyModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+          <span>✨ Konfigurasi Gemini AI Engine</span>
+        </h3>
+        <button onclick="closeAiKeyModal()" class="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        AI digunakan untuk <strong>membaca format file Excel/CSV yang berbeda antar komputer</strong> secara otomatis serta memberikan <strong>rekomendasi penawaran produk per toko</strong>.
+      </p>
+      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-[11px] text-indigo-900 space-y-1">
+        <p class="font-bold">Catatan Keamanan GitHub Pages:</p>
+        <p>API Key hanya disimpan di <code>localStorage</code> browser perangkat lo sendiri (tidak pernah dikirim ke repository GitHub). Dapatkan key gratis di <a href="https://aistudio.google.com/apikey" target="_blank" class="underline font-bold">Google AI Studio</a>.</p>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-800 mb-1">Gemini API Key (Opsional di Preview, Wajib di GitHub):</label>
+        <input id="geminiApiKeyInput" type="password" placeholder="AIzaSy..." class="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+      </div>
+      <div class="flex justify-between items-center pt-2">
+        <button onclick="clearAiKey()" class="px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50">Hapus Key</button>
+        <div class="flex gap-2">
+          <button onclick="closeAiKeyModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">Batal</button>
+          <button onclick="saveAiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow">Simpan Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================================================================
     // 1. MASTER DATA PRODUK NSEP 2026 (LAMPIRAN 2 PKS R-1 & R-2)
@@ -408,6 +483,9 @@
       { id: 'cp_npk17', name: 'Nitrophoska 17.17.17', portfolio: 'Core Portfolio', unit: 'Kg',
         r1: { s3: null, s2: [4000, 10000, 125], s1: [10001, Infinity, 175], growth: 125, blind: 50 },
         r2: { minVol: 800, rate: 50 } },
+      { id: 'cp_npk151020', name: 'Nitrophoska 15.10.20', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [4000, 10000, 125], s1: [10001, Infinity, 175], growth: 125, blind: 50 },
+        r2: { minVol: 800, rate: 50 } },
       { id: 'cp_santaphos', name: 'Santaphos', portfolio: 'Core Portfolio', unit: 'Kg',
         r1: { s3: null, s2: [800, 2000, 75], s1: [2001, Infinity, 125], growth: 75, blind: 30 },
         r2: { minVol: 200, rate: 20 } },
@@ -422,183 +500,573 @@
     // =========================================================================
     // 2. APPLICATION STATE & PERSISTENCE (LOCALSTORAGE)
     // =========================================================================
-    const STORAGE_KEY_DATA = 'santani_nsep_2026_data_v2';
-    const STORAGE_KEY_TIERS = 'santani_nsep_2026_store_tiers_v2';
+    const STORAGE_KEY = 'santani_nsep_2026_state_v4';
+    const AI_KEY_STORAGE = 'santani_nsep_2026_gemini_key';
+    const apiKey = ""; // Otomatis diisi oleh environment jika tersedia
+    const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nop', 'Des'];
 
     let state = {
-      defaultTier: 'R1', // 'R1' atau 'R2' untuk toko yang belum di-tag khusus
-      storeTiers: {}, // { 'NAMA TOKO': 'R1' | 'R2' | 'NON' }
-      stores: [], // Array hasil agregasi per toko
-      unmappedItems: [], // Daftar nama barang di Accurate yang tidak masuk 32 Merek NSEP
+      defaultTier: 'R1',
+      startMonth: 7, // Default Juli
+      endMonth: 12,  // Default Desember
+      storeTiers: {},
+      customBrandMap: {},
+      aiAdviceCache: {},
+      rawTransactions: [],
+      stores: [],
+      unmappedItems: [],
       selectedStoreName: null,
       statusFilter: 'ALL',
       fileName: '',
       lastUpdated: ''
     };
 
-    // Load saved data & custom store tiers saat halaman dibuka
-    window.addEventListener('DOMContentLoaded', () => {
-      try {
-        const savedTiers = localStorage.getItem(STORAGE_KEY_TIERS);
-        if (savedTiers) state.storeTiers = JSON.parse(savedTiers);
+    function getActiveGeminiKey() {
+      const userKey = (localStorage.getItem(AI_KEY_STORAGE) || '').trim();
+      return userKey || apiKey || '';
+    }
 
-        const savedData = localStorage.getItem(STORAGE_KEY_DATA);
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          if (parsed && Array.isArray(parsed.stores) && parsed.stores.length > 0) {
-            state.stores = parsed.stores;
-            state.unmappedItems = parsed.unmappedItems || [];
-            state.fileName = parsed.fileName || 'Data Tersimpan';
-            state.lastUpdated = parsed.lastUpdated || '-';
-            state.defaultTier = parsed.defaultTier || 'R1';
-            state.selectedStoreName = state.stores[0].name;
+    function updateAiButtonStatus() {
+      const btn = document.getElementById('btnAiConfig');
+      if (!btn) return;
+      const hasCustom = !!(localStorage.getItem(AI_KEY_STORAGE) || '').trim();
+      btn.innerHTML = hasCustom ? `<span>✨ AI Aktif</span>` : `<span>✨ AI Engine</span>`;
+    }
 
-            updateDefaultTierButtons();
-            populateSalesDropdown();
-            document.getElementById('dropzoneSection').classList.add('hidden');
-            document.getElementById('dashboardSection').classList.remove('hidden');
-            document.getElementById('btnExportExcel').classList.remove('hidden');
-            document.getElementById('activeFileName').textContent = state.fileName;
-            document.getElementById('lastSavedBadge').textContent = `Auto-Saved: ${state.lastUpdated}`;
-            document.getElementById('activeDataStats').textContent =
-              `Total ${state.stores.length} Pelanggan Aktif di Periode Jul–Des (2025 & 2026)`;
+    function openAiKeyModal() {
+      const input = document.getElementById('geminiApiKeyInput');
+      if (input) input.value = localStorage.getItem(AI_KEY_STORAGE) || '';
+      document.getElementById('aiKeyModal').classList.remove('hidden');
+    }
 
-            renderUnmappedAlert();
-            refreshDashboard();
-            showToast('Data terakhir berhasil dimuat otomatis dari memori browser!', 'bg-emerald-400');
-          }
-        }
-      } catch (e) {
-        console.warn('Gagal memuat cache localStorage:', e);
+    function closeAiKeyModal() {
+      document.getElementById('aiKeyModal').classList.add('hidden');
+    }
+
+    function saveAiKey() {
+      const val = (document.getElementById('geminiApiKeyInput').value || '').trim();
+      if (val) {
+        localStorage.setItem(AI_KEY_STORAGE, val);
+        showToast('Gemini API Key tersimpan aman di browser lokal!', 'bg-indigo-400');
+      } else {
+        localStorage.removeItem(AI_KEY_STORAGE);
+        showToast('API Key dikosongkan.', 'bg-slate-400');
       }
-    });
+      updateAiButtonStatus();
+      closeAiKeyModal();
+    }
+
+    function clearAiKey() {
+      localStorage.removeItem(AI_KEY_STORAGE);
+      document.getElementById('geminiApiKeyInput').value = '';
+      updateAiButtonStatus();
+      showToast('Gemini API Key dihapus dari browser.', 'bg-rose-400');
+    }
 
     function saveStateToStorage() {
       try {
-        localStorage.setItem(STORAGE_KEY_TIERS, JSON.stringify(state.storeTiers));
         const payload = {
+          defaultTier: state.defaultTier,
+          startMonth: state.startMonth,
+          endMonth: state.endMonth,
+          storeTiers: state.storeTiers,
+          customBrandMap: state.customBrandMap,
+          aiAdviceCache: state.aiAdviceCache,
+          rawTransactions: state.rawTransactions,
           stores: state.stores,
           unmappedItems: state.unmappedItems,
           fileName: state.fileName,
-          lastUpdated: state.lastUpdated,
-          defaultTier: state.defaultTier
+          lastUpdated: state.lastUpdated
         };
-        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(payload));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       } catch (e) {
-        console.warn('Storage penuh atau dibatasi browser:', e);
+        try {
+          const lightPayload = {
+            defaultTier: state.defaultTier,
+            startMonth: state.startMonth,
+            endMonth: state.endMonth,
+            storeTiers: state.storeTiers,
+            customBrandMap: state.customBrandMap,
+            aiAdviceCache: state.aiAdviceCache,
+            rawTransactions: [],
+            stores: state.stores,
+            unmappedItems: state.unmappedItems,
+            fileName: state.fileName,
+            lastUpdated: state.lastUpdated
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(lightPayload));
+        } catch (e2) {
+          console.warn('LocalStorage quota penuh:', e2);
+        }
       }
+    }
+
+    function loadStateFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.stores) && parsed.stores.length > 0) {
+          state.defaultTier = parsed.defaultTier || 'R1';
+          state.startMonth = parsed.startMonth || 7;
+          state.endMonth = parsed.endMonth || 12;
+          state.storeTiers = parsed.storeTiers || {};
+          state.customBrandMap = parsed.customBrandMap || {};
+          state.aiAdviceCache = parsed.aiAdviceCache || {};
+          state.rawTransactions = parsed.rawTransactions || [];
+          state.stores = parsed.stores;
+          state.unmappedItems = parsed.unmappedItems || [];
+          state.fileName = parsed.fileName || 'Data Tersimpan';
+          state.lastUpdated = parsed.lastUpdated || '';
+          state.selectedStoreName = state.stores[0]?.name || null;
+          return true;
+        }
+      } catch (e) {
+        console.warn('Gagal membaca localStorage:', e);
+      }
+      return false;
     }
 
     function clearSavedData() {
-      localStorage.removeItem(STORAGE_KEY_DATA);
+      localStorage.removeItem(STORAGE_KEY);
+      state.rawTransactions = [];
       state.stores = [];
       state.unmappedItems = [];
       state.selectedStoreName = null;
+      state.fileName = '';
+      state.lastUpdated = '';
       document.getElementById('dashboardSection').classList.add('hidden');
       document.getElementById('btnExportExcel').classList.add('hidden');
+      document.getElementById('periodSelectorBox').classList.add('hidden');
       document.getElementById('dropzoneSection').classList.remove('hidden');
-      showToast('Cache data dibersihkan. Silakan upload file baru.', 'bg-amber-400');
+      showToast('Cache data berhasil dibersihkan. Silakan upload file baru.', 'bg-amber-400');
     }
 
-    function getEffectiveTier(storeName) {
-      return state.storeTiers[storeName] || state.defaultTier;
-    }
-
-    function setStoreTier(storeName, newTier) {
-      state.storeTiers[storeName] = newTier;
-      saveStateToStorage();
-      refreshDashboard();
-      showToast(`${storeName} diatur ke skema ${newTier === 'NON' ? 'Non-Program' : newTier}`, 'bg-emerald-400');
-    }
-
-    // =========================================================================
-    // 3. DRAG & DROP + FILE PARSING (EXCEL & CSV ACCURATE)
-    // =========================================================================
-    const dropArea = document.getElementById('dropArea');
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evtName => {
-      dropArea.addEventListener(evtName, e => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
-    ['dragenter', 'dragover'].forEach(evtName => {
-      dropArea.addEventListener(evtName, () => dropArea.classList.add('border-emerald-500', 'bg-emerald-50/40'), false);
-    });
-    ['dragleave', 'drop'].forEach(evtName => {
-      dropArea.addEventListener(evtName, () => dropArea.classList.remove('border-emerald-500', 'bg-emerald-50/40'), false);
-    });
-    dropArea.addEventListener('drop', e => {
-      const files = e.dataTransfer.files;
-      if (files && files.length > 0) processFile(files[0]);
-    }, false);
-
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (file) processFile(file);
-    }
-
-    function processFile(file) {
-      state.fileName = file.name;
-      const now = new Date();
-      state.lastUpdated = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
-                          now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      showToast('Membaca & memproses data transaksi...', 'bg-amber-400');
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-
-          const parsedTransactions = extractTransactionsFromRows(rows);
-          if (parsedTransactions.length === 0) {
-            showToast('Tidak ditemukan transaksi valid. Pastikan format export Accurate sesuai.', 'bg-rose-500');
-            return;
-          }
-
-          aggregateByStore(parsedTransactions);
-          saveStateToStorage();
-
-          populateSalesDropdown();
-          document.getElementById('dropzoneSection').classList.add('hidden');
-          document.getElementById('dashboardSection').classList.remove('hidden');
-          document.getElementById('btnExportExcel').classList.remove('hidden');
-          document.getElementById('activeFileName').textContent = state.fileName;
-          document.getElementById('lastSavedBadge').textContent = `Auto-Saved: ${state.lastUpdated}`;
-
-          renderUnmappedAlert();
-          refreshDashboard();
-          showToast(`Berhasil memproses & menyimpan ${parsedTransactions.length.toLocaleString('id-ID')} baris transaksi!`, 'bg-emerald-400');
-        } catch (err) {
-          console.error(err);
-          showToast('Gagal membaca file: ' + err.message, 'bg-rose-500');
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    // Parser tanggal Indonesia Accurate ('30 Jan 2025', '08 Agu 2025', '04 Nop 2026', dll)
-    const MONTH_MAP = {
-      'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'mei': 5, 'may': 5, 'jun': 6,
-      'jul': 7, 'agu': 8, 'aug': 8, 'sep': 9, 'okt': 10, 'oct': 10, 'nop': 11, 'nov': 11, 'des': 12, 'dec': 12
-    };
-
-    function parseAccurateDate(val) {
-      if (!val) return null;
-      if (typeof val === 'number') {
-        // Excel serial date
-        const dateObj = XLSX.SSF.parse_date_code(val);
-        if (dateObj) return { year: dateObj.y, month: dateObj.m, day: dateObj.d };
+    window.addEventListener('DOMContentLoaded', () => {
+      updateAiButtonStatus();
+      const dropArea = document.getElementById('dropArea');
+      if (dropArea) {
+        ['dragenter', 'dragover'].forEach(evt => {
+          dropArea.addEventListener(evt, e => {
+            e.preventDefault();
+            dropArea.classList.add('border-emerald-500', 'bg-emerald-50/40');
+          });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+          dropArea.addEventListener(evt, e => {
+            e.preventDefault();
+            dropArea.classList.remove('border-emerald-500', 'bg-emerald-50/40');
+          });
+        });
+        dropArea.addEventListener('drop', e => {
+          const files = e.dataTransfer.files;
+          if (files && files.length > 0) processMultipleFiles(Array.from(files), false);
+        });
       }
-      const str = String(val).trim();
-      const parts = str.split(/[\s\-\/]+/);
+
+      if (loadStateFromStorage()) {
+        syncPeriodDropdowns();
+        if (state.rawTransactions && state.rawTransactions.length > 0) {
+          aggregateByStore(state.rawTransactions);
+        }
+        activateDashboardUI();
+        showToast('Data terakhir berhasil dipulihkan dari memori browser.', 'bg-emerald-400');
+      }
+    });
+
+    function syncPeriodDropdowns() {
+      const sSel = document.getElementById('startMonthSelect');
+      const eSel = document.getElementById('endMonthSelect');
+      if (sSel) sSel.value = String(state.startMonth);
+      if (eSel) eSel.value = String(state.endMonth);
+    }
+
+    function getPeriodLabel() {
+      const m1 = MONTH_NAMES[state.startMonth] || 'Jul';
+      const m2 = MONTH_NAMES[state.endMonth] || 'Des';
+      return m1 === m2 ? m1 : `${m1}–${m2}`;
+    }
+
+    function changeEvaluationPeriod() {
+      let sM = parseInt(document.getElementById('startMonthSelect').value, 10) || 7;
+      let eM = parseInt(document.getElementById('endMonthSelect').value, 10) || 12;
+      if (sM > eM) {
+        const tmp = sM;
+        sM = eM;
+        eM = tmp;
+        syncPeriodDropdowns();
+      }
+      state.startMonth = sM;
+      state.endMonth = eM;
+
+      if (!state.rawTransactions || state.rawTransactions.length === 0) {
+        showToast('Re-upload file Excel/CSV sekali lagi agar filter bulan bisa menghitung ulang.', 'bg-amber-400');
+        return;
+      }
+
+      aggregateByStore(state.rawTransactions);
+      saveStateToStorage();
+      activateDashboardUI();
+      showToast(`Periode evaluasi diubah ke ${getPeriodLabel()} (2025 vs 2026)`, 'bg-emerald-400');
+    }
+
+    // =========================================================================
+    // 3. FILE PARSER ENGINE (ACCURATE XLS / XLSX / CSV MULTI-KOMPUTER + MERGE)
+    // =========================================================================
+    function handleFileUpload(e, isMergeMode = false) {
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      if (files.length > 0) processMultipleFiles(files, isMergeMode);
+      e.target.value = '';
+    }
+
+    function readSingleFileTransactions(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          try {
+            let workbook;
+            const buffer = evt.target.result;
+            const isCsv = file.name.toLowerCase().endsWith('.csv');
+
+            if (isCsv) {
+              const text = new TextDecoder('utf-8').decode(new Uint8Array(buffer));
+              const firstLines = text.split(/\r?\n/).slice(0, 10).join('\n');
+              const semiCount = (firstLines.match(/;/g) || []).length;
+              const commaCount = (firstLines.match(/,/g) || []).length;
+              const fs = semiCount >= commaCount ? ';' : ',';
+              workbook = XLSX.read(text, { type: 'string', FS: fs });
+            } else {
+              workbook = XLSX.read(new Uint8Array(buffer), { type: 'array', cellDates: false });
+            }
+
+            let txs = [];
+            let sampleRowsForAi = [];
+
+            for (const sheetName of workbook.SheetNames) {
+              const sheet = workbook.Sheets[sheetName];
+              if (!sheet) continue;
+              const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+              if (rows && rows.length > 0 && sampleRowsForAi.length === 0) {
+                sampleRowsForAi = rows.slice(0, 35);
+              }
+              const parsed = parseAccurateRows(rows);
+              if (parsed.length > 0) {
+                txs = txs.concat(parsed);
+              }
+            }
+
+            resolve({ fileName: file.name, txs, sampleRowsForAi });
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = () => reject(new Error(`Gagal membaca file ${file.name}`));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function deduplicateTransactions(txList) {
+      const seen = new Set();
+      const result = [];
+      for (const tx of txList) {
+        const key = `${tx.sourceFile || 'f'}|${tx.rowIdx || ''}|${tx.store}|${tx.noFaktur || ''}|${tx.year}-${tx.month}-${tx.day || ''}|${tx.item}|${tx.qty}|${tx.val}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push(tx);
+        }
+      }
+      return result;
+    }
+
+    async function processMultipleFiles(files, isMergeMode = false) {
+      try {
+        showToast(isMergeMode ? `Menggabungkan ${files.length} file sales...` : `Membaca ${files.length} file Accurate...`, 'bg-amber-400');
+
+        let newlyParsed = [];
+        let fallbackSamples = [];
+        const fileNames = [];
+
+        for (const file of files) {
+          fileNames.push(file.name);
+          const res = await readSingleFileTransactions(file);
+          res.txs.forEach(t => { t.sourceFile = file.name; });
+          if (res.txs.length > 0) {
+            newlyParsed = newlyParsed.concat(res.txs);
+          } else if (res.sampleRowsForAi.length > 0) {
+            fallbackSamples.push({ fileName: file.name, rows: res.sampleRowsForAi });
+          }
+        }
+
+        if (newlyParsed.length === 0 && fallbackSamples.length > 0) {
+          showToast('Format kolom berbeda terdeteksi. Mengaktifkan AI Universal Reader...', 'bg-indigo-400');
+          const aiTxs = await parseWithAiFallback(fallbackSamples[0].rows, fallbackSamples[0].fileName);
+          if (aiTxs && aiTxs.length > 0) {
+            newlyParsed = aiTxs;
+          }
+        }
+
+        if (newlyParsed.length === 0) {
+          showToast('Tidak ditemukan baris transaksi yang valid di file tersebut.', 'bg-rose-500');
+          return;
+        }
+
+        let combinedTxs = isMergeMode && Array.isArray(state.rawTransactions)
+          ? deduplicateTransactions([...state.rawTransactions, ...newlyParsed])
+          : deduplicateTransactions(newlyParsed);
+
+        state.rawTransactions = combinedTxs;
+        aggregateByStore(combinedTxs);
+
+        if (isMergeMode && state.fileName) {
+          const prevFiles = state.fileName.split(' + ');
+          const mergedNames = Array.from(new Set([...prevFiles, ...fileNames]));
+          state.fileName = mergedNames.join(' + ');
+        } else {
+          state.fileName = fileNames.join(' + ');
+        }
+
+        state.lastUpdated = new Date().toLocaleString('id-ID', {
+          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        if (!state.selectedStoreName || !state.stores.some(s => s.name === state.selectedStoreName)) {
+          state.selectedStoreName = state.stores[0]?.name || null;
+        }
+
+        saveStateToStorage();
+        activateDashboardUI();
+        showToast(
+          isMergeMode
+            ? `Berhasil digabung! Total ${state.stores.length} toko dari ${combinedTxs.length.toLocaleString('id-ID')} transaksi.`
+            : `Berhasil memuat ${state.stores.length} toko (${combinedTxs.length.toLocaleString('id-ID')} transaksi).`,
+          'bg-emerald-400'
+        );
+
+        if (state.unmappedItems.length > 0 && getActiveGeminiKey()) {
+          autoMapUnmappedItemsWithAI();
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal memproses file: ' + err.message, 'bg-rose-500');
+      }
+    }
+
+    function parseAccurateRows(rows) {
+      const transactions = [];
+      let currentStore = '';
+      let currentSalesFromHeader = '';
+      let lastFaktur = '';
+      let lastDateInfo = null;
+      const nonStoreCategories = new Set([
+        'PUPUK', 'PUPUK CAIR', 'FUNGISIDA', 'HERBISIDA', 'INSEKTISIDA',
+        'RODENTISIDA', 'ZPT', 'MOLUKUSIDA', 'MOLUSKISIDA', 'PESTISIDA',
+        'PEREKAT', 'BENIH', 'BAKTERISIDA', 'AKARISIDA', 'ALAT PERTANIAN',
+        'EMULGATOR', 'PLASTIK', 'POMPA', 'SPAREPART'
+      ]);
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (!Array.isArray(row)) continue;
+
+        const cells = row.map(c => String(c ?? '').trim());
+        const nonEmpty = cells.filter(c => c !== '');
+        if (nonEmpty.length === 0) continue;
+
+        const upperFirst = nonEmpty[0].toUpperCase();
+        if (
+          upperFirst.startsWith('RINCIAN PENJUALAN') ||
+          upperFirst.startsWith('DARI ') ||
+          upperFirst.startsWith('UNIT ') ||
+          upperFirst === 'NAMA PELANGGAN' ||
+          upperFirst === 'NO. FAKTUR' ||
+          upperFirst.startsWith('NAMA PENJUAL')
+        ) {
+          if (upperFirst.startsWith('NAMA PENJUAL') && nonEmpty.length >= 2) {
+            currentSalesFromHeader = nonEmpty[1];
+          }
+          continue;
+        }
+
+        if (nonEmpty.length === 1) {
+          const val = nonEmpty[0];
+          const upperVal = val.toUpperCase();
+          if (!nonStoreCategories.has(upperVal) && !/^[\d.,\s-]+$/.test(val) && val.length > 2) {
+            currentStore = val;
+            lastFaktur = '';
+            lastDateInfo = null;
+          }
+          continue;
+        }
+
+        if (nonEmpty.length === 2 && !/^[\d.,\s-]+$/.test(nonEmpty[0]) && /^[\d.,\s-]+$/.test(nonEmpty[1])) {
+          const upperVal = nonEmpty[0].toUpperCase();
+          if (!nonStoreCategories.has(upperVal) && nonEmpty[0].length > 2) {
+            currentStore = nonEmpty[0];
+            lastFaktur = '';
+            lastDateInfo = null;
+          }
+          continue;
+        }
+
+        let dateColIdx = -1;
+        let dateInfo = null;
+        for (let c = 0; c < cells.length; c++) {
+          const d = parseIndonesianDate(cells[c]);
+          if (d) {
+            dateColIdx = c;
+            dateInfo = d;
+            break;
+          }
+        }
+
+        let fakturNo = '';
+        for (let c = 0; c < (dateColIdx !== -1 ? dateColIdx : Math.min(4, cells.length)); c++) {
+          if (/^\d{2}\.\d{2}\.\d+/.test(cells[c]) || /^[A-Z0-9/-]{5,}$/i.test(cells[c])) {
+            if (!nonStoreCategories.has(cells[c].toUpperCase())) {
+              fakturNo = cells[c];
+              break;
+            }
+          }
+        }
+
+        if (dateInfo) {
+          lastDateInfo = dateInfo;
+          if (fakturNo) lastFaktur = fakturNo;
+        } else if (lastDateInfo && cells.length >= 6) {
+          const hasProductText = cells.slice(1, 7).some(txt => txt.length >= 4 && !/^[\d.,\s-]+$/.test(txt) && !nonStoreCategories.has(txt.toUpperCase()));
+          if (hasProductText) {
+            dateInfo = lastDateInfo;
+            dateColIdx = 3;
+            fakturNo = fakturNo || lastFaktur;
+          }
+        }
+
+        if (!dateInfo) continue;
+
+        if (dateColIdx >= 2) {
+          for (let c = 0; c < dateColIdx; c++) {
+            const candidate = cells[c];
+            if (
+              candidate &&
+              !/^\d{2}\.\d{2}\./.test(candidate) &&
+              !/^[\d.,\s-]+$/.test(candidate) &&
+              !nonStoreCategories.has(candidate.toUpperCase()) &&
+              candidate.length > 2
+            ) {
+              currentStore = candidate;
+              break;
+            }
+          }
+        }
+
+        let itemName = '';
+        let itemColIdx = -1;
+        for (let c = dateColIdx + 1; c < cells.length; c++) {
+          const val = cells[c];
+          if (val && !/^[\d.,\s-]+$/.test(val) && !nonStoreCategories.has(val.toUpperCase())) {
+            itemName = val;
+            itemColIdx = c;
+            break;
+          }
+        }
+        if (!itemName) continue;
+
+        let qty = 0;
+        let qtyColIdx = -1;
+        for (let c = itemColIdx + 1; c < cells.length; c++) {
+          if (cells[c] !== '' && /^[\d.,-]+$/.test(cells[c])) {
+            qty = cleanNumber(cells[c]);
+            qtyColIdx = c;
+            break;
+          }
+        }
+
+        let unit = 'KG';
+        let unitColIdx = qtyColIdx;
+        if (qtyColIdx !== -1 && qtyColIdx + 1 < cells.length) {
+          const nextCell = cells[qtyColIdx + 1];
+          if (nextCell && !/^[\d.,-]+$/.test(nextCell) && nextCell.length <= 6) {
+            unit = nextCell.toUpperCase();
+            unitColIdx = qtyColIdx + 1;
+          }
+        }
+
+        let totalHarga = 0;
+        let hargaColIdx = unitColIdx;
+        for (let c = unitColIdx + 1; c < cells.length; c++) {
+          if (cells[c] !== '' && /^[\d.,-]+$/.test(cells[c])) {
+            totalHarga = cleanNumber(cells[c]);
+            hargaColIdx = c;
+            break;
+          }
+        }
+
+        let salesName = currentSalesFromHeader;
+        for (let c = hargaColIdx + 1; c < cells.length; c++) {
+          const val = cells[c];
+          if (val && !/^[\d.,-]+$/.test(val) && !nonStoreCategories.has(val.toUpperCase())) {
+            salesName = val;
+            break;
+          }
+        }
+
+        if (currentStore) {
+          transactions.push({
+            rowIdx: i,
+            store: currentStore,
+            noFaktur: fakturNo,
+            year: dateInfo.year,
+            month: dateInfo.month,
+            day: dateInfo.day || 1,
+            item: itemName,
+            qty: qty,
+            unit: unit,
+            val: totalHarga,
+            sales: salesName || 'Tidak Tercatat'
+          });
+        }
+      }
+
+      return transactions;
+    }
+
+    function parseIndonesianDate(str) {
+      if (!str) return null;
+      const clean = str.trim();
+
+      if (/^\d{5}$/.test(clean)) {
+        const serial = parseInt(clean, 10);
+        if (serial > 40000 && serial < 60000) {
+          const utcDays = Math.floor(serial - 25569);
+          const d = new Date(utcDays * 86400 * 1000);
+          return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+        }
+      }
+
+      const monthMap = {
+        jan: 1, feb: 2, peb: 2, mar: 3, apr: 4, mei: 5, may: 5, jun: 6,
+        jul: 7, agu: 8, ags: 8, aug: 8, sep: 9, okt: 10, oct: 10,
+        nop: 11, nov: 11, des: 12, dec: 12
+      };
+
+      const parts = clean.split(/[\s/-]+/);
       if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const mKey = parts[1].toLowerCase().substring(0, 3);
-        const m = MONTH_MAP[mKey] || parseInt(parts[1], 10);
-        let y = parseInt(parts[2], 10);
-        if (y < 100) y += 2000;
-        if (!isNaN(d) && !isNaN(m) && !isNaN(y) && m >= 1 && m <= 12) {
-          return { year: y, month: m, day: d };
+        const mKey = parts[1].toLowerCase().slice(0, 3);
+        if (monthMap[mKey]) {
+          const day = parseInt(parts[0], 10) || 1;
+          let year = parseInt(parts[2], 10);
+          if (year < 100) year += 2000;
+          if (year >= 2020 && year <= 2035) {
+            return { year, month: monthMap[mKey], day };
+          }
+        }
+        if (/^\d{1,2}$/.test(parts[0]) && /^\d{1,2}$/.test(parts[1]) && /^\d{4}$/.test(parts[2])) {
+          const day = parseInt(parts[0], 10) || 1;
+          const month = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+          if (month >= 1 && month <= 12 && year >= 2020 && year <= 2035) {
+            return { year, month, day };
+          }
         }
       }
       return null;
@@ -606,30 +1074,161 @@
 
     function cleanNumber(val) {
       if (typeof val === 'number') return val;
-      if (!val) return 0;
-      const cleaned = String(val).replace(/,/g, '').trim();
-      const num = parseFloat(cleaned);
+      const s = String(val || '').replace(/,/g, '').trim();
+      const num = parseFloat(s);
       return isNaN(num) ? 0 : num;
     }
 
-    // Mapper Nama Barang Accurate -> ID Produk NSEP + Konversi Satuan ke KG/LTR
-    function mapAccurateItemToNSEP(rawName, rawUnit, rawQty) {
-      const item = String(rawName).toUpperCase().trim();
-      const sat = String(rawUnit).toUpperCase().trim();
-      const qty = cleanNumber(rawQty);
+    // =========================================================================
+    // 3B. GEMINI AI ENGINE (UNIVERSAL PARSER + AUTO-MAPPER + SALES ADVISOR)
+    // =========================================================================
+    async function callGeminiAPI(promptText, isJson = false) {
+      const activeKey = getActiveGeminiKey();
+      const model = 'gemini-3-flash-preview';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(activeKey)}`;
 
-      if (qty === 0) return null;
+      const body = {
+        contents: [{ parts: [{ text: promptText }] }]
+      };
+      if (isJson) {
+        body.generationConfig = { responseMimeType: 'application/json' };
+      }
 
-      // Power Brand
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`AI API Error (${resp.status}): ${errText.slice(0, 120)}`);
+      }
+
+      const data = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return text;
+    }
+
+    async function parseWithAiFallback(sampleRows, fileName) {
+      try {
+        const masterList = NSEP_PRODUCTS.map(p => `${p.id}: ${p.name}`).join(', ');
+        const prompt = `Kamu adalah parser data penjualan pupuk PT Santani Agro Lestari.
+Berikut adalah potongan baris awal (array of arrays) dari file "${fileName}":
+${JSON.stringify(sampleRows.slice(0, 30))}
+
+Daftar Master Produk NSEP: [${masterList}]
+
+Ekstrak seluruh baris transaksi yang terlihat menjadi JSON array of objects dengan format persis:
+[{"store": "NAMA TOKO", "year": 2026, "month": 7, "item": "NAMA BARANG", "qty": 100, "unit": "KG", "val": 1500000, "sales": "NAMA SALES"}]
+Jika tidak ada transaksi valid, kembalikan [].`;
+
+        const rawJson = await callGeminiAPI(prompt, true);
+        const parsed = JSON.parse(rawJson);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('AI Fallback Parser gagal:', e);
+        return [];
+      }
+    }
+
+    async function autoMapUnmappedItemsWithAI() {
+      try {
+        const masterList = NSEP_PRODUCTS.map(p => `${p.id} = ${p.name}`).join('\n');
+        const items = state.unmappedItems.slice(0, 40);
+        const prompt = `Cocokkan nama barang pupuk dari sistem Accurate berikut ke ID Master Produk NSEP 2026 jika memang merupakan merek yang sama (misal karena typo atau singkatan kemasan). Jika produk di luar NSEP (seperti ZA, Nitrea, NPK 12.12.17, dll), isi null.
+
+Master Produk NSEP:
+${masterList}
+
+Daftar Item Belum Terpetakan:
+${JSON.stringify(items)}
+
+Kembalikan JSON object mapping {"NAMA ITEM ACCURATE": "id_master_atau_null"}.`;
+
+        const rawJson = await callGeminiAPI(prompt, true);
+        const mapping = JSON.parse(rawJson);
+        let mappedCount = 0;
+
+        for (const [accName, prodId] of Object.entries(mapping)) {
+          if (prodId && NSEP_PRODUCTS.some(p => p.id === prodId)) {
+            state.customBrandMap[accName.toUpperCase().trim()] = prodId;
+            mappedCount++;
+          }
+        }
+
+        if (mappedCount > 0 && state.rawTransactions.length > 0) {
+          aggregateByStore(state.rawTransactions);
+          saveStateToStorage();
+          refreshDashboard();
+          showToast(`✨ AI otomatis memetakan ${mappedCount} varian produk baru ke Master NSEP!`, 'bg-indigo-400');
+        }
+      } catch (e) {
+        console.warn('Auto-map AI dilewati:', e);
+      }
+    }
+
+    async function generateAiStoreAdvice(storeName) {
+      const store = state.stores.find(s => s.name === storeName);
+      if (!store) return;
+
+      const box = document.getElementById('aiStoreAdviceBox');
+      const content = document.getElementById('aiStoreAdviceContent');
+      box.classList.remove('hidden');
+      content.innerHTML = `<span class="italic text-indigo-700">✨ AI sedang menganalisis riwayat belanja 2025 vs 2026 & celah insentif ${escapeHtml(store.name)}...</span>`;
+
+      try {
+        const ev = evaluateStore(store);
+        const pLabel = getPeriodLabel();
+        const activeItems = ev.productRows
+          .filter(r => r.vol25 > 0 || r.vol26 > 0)
+          .map(r => `- ${r.name} (${r.portfolio}): ${pLabel} 2025 = ${r.vol25} ${r.unit}, ${pLabel} 2026 = ${r.vol26} ${r.unit}, Status = ${r.strataLabel}${r.nextTargetInfo ? `, Kurang ${r.nextTargetInfo.gap} ${r.unit} ke ${r.nextTargetInfo.targetName}` : ''}`)
+          .join('\n');
+
+        const prompt = `Kamu adalah Senior Sales Strategist PT Santani Agro Lestari untuk program National Sales Excellence Program (NSEP) 2026.
+Analisis performa toko berikut dan berikan rekomendasi penawaran order yang singkat, tegas, taktis, dan siap disampaikan Sales ke pemilik toko (maksimal 4 poin pendek):
+
+Nama Toko: ${store.name}
+Skema Peserta: ${ev.tier} (${ev.tier === 'R1' ? 'Wajib 2 Power Brand, Min 3 Strategic Platform, Min 3 Core Portfolio, Total Min 12 Merek' : 'Wajib 2 Power Brand, Min 6 Core Portfolio, Total Min 8 Merek'})
+Periode Evaluasi: ${pLabel} (2025 vs 2026)
+Status Syarat Merek: ${ev.isQualified ? 'LOLOS' : 'BELUM LOLOS -> ' + ev.missingSummary.join('; ')}
+Estimasi Insentif Saat Ini: ${formatRupiah(ev.grandTotalIncentive)}
+
+Riwayat Produk Toko:
+${activeItems || 'Belum ada pembelian produk NSEP di periode ini.'}
+
+Berikan rekomendasi konkret:
+1. Prioritas produk wajib yang harus segera di-order agar syarat merek sah (tidak hangus).
+2. Produk yang paling realistis untuk di-upsell karena volume sudah mendekati strata berikutnya atau tahun 2025 pernah ambil banyak.
+3. Kalimat penawaran singkat untuk pemilik toko.`;
+
+        const advice = await callGeminiAPI(prompt, false);
+        state.aiAdviceCache[store.name] = advice;
+        saveStateToStorage();
+        content.textContent = advice;
+      } catch (err) {
+        content.innerHTML = `<span class="text-rose-700 font-semibold">Gagal memuat saran AI: ${escapeHtml(err.message)}. Pastikan Gemini API Key sudah diisi di tombol "✨ AI Engine" di atas jika berjalan di GitHub Pages.</span>`;
+      }
+    }
+
+    function mapAccurateItemToNSEP(rawItem, rawUnit, qty) {
+      const item = rawItem.toUpperCase().trim();
+      const unit = rawUnit.toUpperCase().trim();
+
+      if (state.customBrandMap && state.customBrandMap[item]) {
+        return { id: state.customBrandMap[item], vol: qty };
+      }
+
+      // POWER BRAND
       if (item.includes('15.15.15')) return { id: 'pb_npk15', vol: qty };
       if (item.includes('CANTIK')) return { id: 'pb_cantik', vol: qty };
 
-      // Strategic Platform
+      // STRATEGIC PLATFORM
       if (item.includes('SANTAMIKRO GOLD')) {
         const factor = item.includes('2,5 GR') || item.includes('2.5 GR') ? 0.0025 : (item.includes('25 GR') ? 0.025 : 1);
         return { id: 'sp_smgold', vol: qty * factor };
       }
-      if (item.includes('JAGAIR')) {
+      if (item.includes('JAGAIR') || item.includes('JAGAAIR')) {
         const factor = item.includes('500GR') || item.includes('500 GR') ? 0.5 : 1;
         return { id: 'sp_jagaair', vol: qty * factor };
       }
@@ -646,7 +1245,7 @@
         return { id: 'sp_loubang', vol: qty * factor };
       }
       if (item.includes('(CUAN)') || item.includes('UREA AMONIUM NITRAT')) {
-        const factor = sat === 'PCH' ? 2 : (sat === 'JRC' ? 5 : 1);
+        const factor = unit === 'PCH' ? 2 : (unit === 'JRC' ? 5 : 1);
         return { id: 'sp_cuan', vol: qty * factor };
       }
       if (item.includes('PERFECT 15.6.20') || item.includes('NITROPHOSKA PERFECT')) return { id: 'sp_perfect', vol: qty };
@@ -655,26 +1254,27 @@
       if (item.includes('UREON') || item.includes('AMMONIUM CHLORIDA')) return { id: 'sp_ureon', vol: qty };
       if (item.includes('SULPHOS')) return { id: 'sp_sulphos', vol: qty };
 
-      // Core Portfolio
+      // CORE PORTFOLIO
       if (item.includes('ENTEC-13-10-20') || item.includes('ENTEC 13.10.20')) return { id: 'cp_entec13', vol: qty };
       if (item.includes('ENTEC 20.10.10') || item.includes('ENTEC-20-10-10')) return { id: 'cp_entec20', vol: qty };
       if (item.includes('KNOCK')) return { id: 'cp_knock', vol: qty };
-      if (item.startsWith('UREN ') || item.startsWith('UREN@')) return { id: 'cp_uren', vol: qty };
+      if (item.startsWith('UREN ') || item.startsWith('UREN@') || item === 'UREN') return { id: 'cp_uren', vol: qty };
       if (item.includes('15.0.15') || item.includes('15-0-15')) return { id: 'cp_nk15', vol: qty };
       if (item.includes('SANTANICALNIT') || item.includes('CALNIT')) return { id: 'cp_calnit', vol: qty };
       if (item.includes('CANIBOR') || item.includes('CARATE')) return { id: 'cp_carate', vol: qty };
       if (item.includes('MAGNESIUM NITRATE') || item.includes('MAGNESIUM NITRAT')) return { id: 'cp_mgnitrat', vol: qty };
-      if (item.includes('MAGNESIUM SULFATE') || item.includes('MANZUR')) return { id: 'cp_mgsulfat', vol: qty };
+      if (item.includes('MAGNESIUM SULFATE') || item.includes('MANZUR') || item.includes('MAGNESIUM SULFAT')) return { id: 'cp_mgsulfat', vol: qty };
       if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)')) {
-        const factor = sat === 'DUS' ? 20 : 1;
+        const factor = unit === 'DUS' ? 20 : 1;
         return { id: 'cp_mkp', vol: qty * factor };
       }
       if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)')) return { id: 'cp_map', vol: qty };
       if (item.includes('CANKALI')) return { id: 'cp_cankali', vol: qty };
       if (item.includes('SANTAGROW ZK')) return { id: 'cp_zk', vol: qty };
-      if (item.includes('KNO3 PUTIH')) return { id: 'cp_kno3', vol: qty };
+      if (item.includes('KNO3 PUTIH') || item.includes('S.GROW NOP')) return { id: 'cp_kno3', vol: qty };
       if (item.includes('16.16.16')) return { id: 'cp_npk16', vol: qty };
       if (item.includes('17.17.17')) return { id: 'cp_npk17', vol: qty };
+      if (item.includes('15.10.20') || item.includes('15-10-20')) return { id: 'cp_npk151020', vol: qty };
       if (item.includes('SANTAPHOS')) return { id: 'cp_santaphos', vol: qty };
       if (item.includes('KCL GRANULAR') || item.includes('SANTAGROW KCL')) return { id: 'cp_kcl', vol: qty };
       if (item.includes('KUDA SAKTI')) return { id: 'cp_tsp', vol: qty };
@@ -682,359 +1282,117 @@
       return null;
     }
 
-    // Ekstraktor fleksibel untuk format Excel (.xls/.xlsx) maupun CSV Accurate
-    function extractTransactionsFromRows(rows) {
-      const transactions = [];
-      let currentStore = null;
-      const categories = new Set(['FUNGISIDA', 'HERBISIDA', 'INSEKTISIDA', 'PUPUK', 'PUPUK CAIR', 'RODENTISIDA', 'ZPT', 'MOLUKUSIDA', 'PESTISIDA', 'PEREKAT', 'BENIH', 'BAKTERISIDA', 'AKARISIDA', 'ALAT PERTANIAN', 'EMULGATOR', 'PLASTIK', 'POMPA', 'SPAREPART']);
-      const skipPrefixes = ['Nama Pelanggan', 'No. Faktur', 'Rincian Penjualan', 'Dari ', 'Total ', 'Subtotal', 'PT.', 'PT '];
-
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || row.length === 0) continue;
-
-        const cells = row.map(c => String(c ?? '').trim());
-        const nonEmpty = cells.filter(c => c !== '');
-        if (nonEmpty.length === 0) continue;
-
-        // Skip header & summary rows
-        if (skipPrefixes.some(p => nonEmpty[0].startsWith(p))) continue;
-
-        // Deteksi Nama Pelanggan di Kolom 0 (jika bukan angka/tanggal dan bukan kategori)
-        const col0 = cells[0];
-        if (col0 && !categories.has(col0.toUpperCase()) && !parseAccurateDate(col0) && isNaN(cleanNumber(col0.replace(/\./g, '')))) {
-          currentStore = col0;
-        }
-
-        // Cari posisi kolom Tanggal Faktur secara dinamis (karena merged cell Accurate bisa menggeser indeks kolom)
-        let dateColIdx = -1;
-        let parsedDate = null;
-        for (let c = 0; c < Math.min(cells.length, 7); c++) {
-          if (c === 0 && cells[0] === currentStore) continue;
-          const d = parseAccurateDate(cells[c]);
-          if (d) {
-            dateColIdx = c;
-            parsedDate = d;
-            break;
-          }
-        }
-
-        // Jika baris ini adalah baris transaksi (punya tanggal faktur valid & nama toko aktif)
-        if (parsedDate && currentStore && dateColIdx !== -1) {
-          // Struktur standar Accurate setelah Tanggal Faktur:
-          // [dateColIdx] = Tgl Faktur, [+1] = Keterangan Barang, [+2] = Kuantitas, [+3] = Satuan, [+4] = Total Harga, [+5] = Nama Penjual
-          const itemDesc = cells[dateColIdx + 1] || '';
-          const qty = cells[dateColIdx + 2] || 0;
-          const unit = cells[dateColIdx + 3] || '';
-          const totalHarga = cleanNumber(cells[dateColIdx + 4]);
-          const salesName = cells[dateColIdx + 5] || '';
-
-          if (itemDesc) {
-            transactions.push({
-              storeName: currentStore,
-              dateObj: parsedDate,
-              itemDesc,
-              qty,
-              unit,
-              totalHarga,
-              salesName
-            });
-          }
-        }
-      }
-      return transactions;
-    }
-
-    // Agregasi per toko untuk periode Jul-Des 2025 dan Jul-Des 2026 (Semua pelanggan tetap tercatat)
     function aggregateByStore(transactions) {
-      const storeMap = {};
+      const storeMap = new Map();
       const unmappedSet = new Set();
+      const sM = state.startMonth || 7;
+      const eM = state.endMonth || 12;
 
       transactions.forEach(tx => {
-        const { storeName, dateObj, itemDesc, qty, unit, totalHarga, salesName } = tx;
-
-        // Pastikan SEMUA toko yang ada di file masuk ke daftar (tidak hilang walau belum belanja di Jul-Des)
-        if (!storeMap[storeName]) {
-          storeMap[storeName] = {
-            name: storeName,
-            sales: new Set(),
-            products: {} // key: productId -> { vol25, vol26, val26 }
-          };
+        if (!storeMap.has(tx.store)) {
+          storeMap.set(tx.store, {
+            name: tx.store,
+            salesSet: new Set(),
+            products: {}
+          });
         }
-        if (salesName) storeMap[storeName].sales.add(salesName);
+        const st = storeMap.get(tx.store);
+        if (tx.sales) st.salesSet.add(tx.sales);
 
-        const isJulDec2025 = (dateObj.year === 2025 && dateObj.month >= 7 && dateObj.month <= 12);
-        const isJulDec2026 = (dateObj.year === 2026 && dateObj.month >= 7 && dateObj.month <= 12);
-
-        if (!isJulDec2025 && !isJulDec2026) return;
-
-        const mapped = mapAccurateItemToNSEP(itemDesc, unit, qty);
+        const mapped = mapAccurateItemToNSEP(tx.item, tx.unit, tx.qty);
         if (!mapped) {
-          unmappedSet.add(itemDesc);
+          unmappedSet.add(tx.item);
           return;
         }
 
-        if (!storeMap[storeName].products[mapped.id]) {
-          storeMap[storeName].products[mapped.id] = { vol25: 0, vol26: 0, val26: 0 };
+        if (!st.products[mapped.id]) {
+          st.products[mapped.id] = { vol25: 0, vol26: 0, val25: 0, val26: 0, preVol26: 0 };
         }
-        if (isJulDec2025) {
-          storeMap[storeName].products[mapped.id].vol25 += mapped.vol;
-        } else if (isJulDec2026) {
-          storeMap[storeName].products[mapped.id].vol26 += mapped.vol;
-          storeMap[storeName].products[mapped.id].val26 += totalHarga;
+
+        const inSelectedMonths = tx.month >= sM && tx.month <= eM;
+
+        if (tx.year === 2025 && inSelectedMonths) {
+          st.products[mapped.id].vol25 += mapped.vol;
+          st.products[mapped.id].val25 += tx.val;
+        } else if (tx.year === 2026) {
+          if (inSelectedMonths) {
+            st.products[mapped.id].vol26 += mapped.vol;
+            st.products[mapped.id].val26 += tx.val;
+          } else if (tx.month < sM) {
+            st.products[mapped.id].preVol26 += mapped.vol;
+          }
         }
       });
 
       state.unmappedItems = Array.from(unmappedSet).sort();
-      state.stores = Object.values(storeMap).map(s => ({
+      state.stores = Array.from(storeMap.values()).map(s => ({
         name: s.name,
-        sales: Array.from(s.sales).join(', ') || '-',
+        sales: Array.from(s.salesSet).join(', ') || '-',
         products: s.products
-      }));
-
-      // Urutkan toko berdasarkan jumlah merek 2026 terbanyak
-      state.stores.sort((a, b) => {
-        const countA = Object.values(a.products).filter(p => p.vol26 > 0).length;
-        const countB = Object.values(b.products).filter(p => p.vol26 > 0).length;
-        if (countB !== countA) return countB - countA;
-        return a.name.localeCompare(b.name);
-      });
-
-      if (state.stores.length > 0 && (!state.selectedStoreName || !state.stores.some(s => s.name === state.selectedStoreName))) {
-        state.selectedStoreName = state.stores[0].name;
-      }
-
-      document.getElementById('activeDataStats').textContent =
-        `Total ${state.stores.length} Pelanggan Terdeteksi (Audit Periode Jul–Des 2025 & 2026)`;
+      })).sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    function renderUnmappedAlert() {
-      const box = document.getElementById('unmappedAlertBox');
-      const list = document.getElementById('unmappedList');
-      const countEl = document.getElementById('unmappedCount');
-      if (!state.unmappedItems || state.unmappedItems.length === 0) {
-        box.classList.add('hidden');
-        return;
-      }
-      countEl.textContent = state.unmappedItems.length;
-      list.innerHTML = state.unmappedItems.map(item =>
-        `<span class="px-2 py-0.5 rounded bg-white border border-amber-300 text-[11px] font-mono text-amber-950">${item}</span>`
-      ).join('');
-      box.classList.remove('hidden');
-    }
+    function activateDashboardUI() {
+      document.getElementById('dropzoneSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      document.getElementById('btnExportExcel').classList.remove('hidden');
+      document.getElementById('periodSelectorBox').classList.remove('hidden');
+      syncPeriodDropdowns();
 
-    function populateSalesDropdown() {
-      const select = document.getElementById('salesFilterSelect');
-      const salesSet = new Set();
+      document.getElementById('activeFileName').textContent = state.fileName;
+      document.getElementById('lastSavedBadge').textContent = state.lastUpdated ? `Tersimpan: ${state.lastUpdated}` : 'Tersimpan Otomatis';
+      document.getElementById('activeDataStats').textContent = `Total ${state.stores.length} pelanggan terdeteksi • Periode Evaluasi: ${getPeriodLabel()} (2025 vs 2026)`;
+
+      // Populate Sales Dropdown
+      const salesSelect = document.getElementById('salesFilterSelect');
+      const allSales = new Set();
       state.stores.forEach(s => {
-        s.sales.split(',').forEach(name => {
-          const clean = name.trim();
-          if (clean && clean !== '-') salesSet.add(clean);
-        });
+        s.sales.split(',').map(x => x.trim()).filter(x => x && x !== '-').forEach(x => allSales.add(x));
       });
-      const sortedSales = Array.from(salesSet).sort();
-      select.innerHTML = `<option value="ALL">Semua Sales (${sortedSales.length})</option>` +
-        sortedSales.map(name => `<option value="${escapeQuotes(name)}">${name}</option>`).join('');
+      const currentSales = salesSelect.value;
+      salesSelect.innerHTML = `<option value="ALL">Semua Sales / Penjual (${allSales.size})</option>` +
+        Array.from(allSales).sort().map(sal => `<option value="${escapeHtml(sal)}">${escapeHtml(sal)}</option>`).join('');
+      if (Array.from(allSales).includes(currentSales)) salesSelect.value = currentSales;
+
+      // Render Unmapped Audit Box jika ada
+      const unmappedBox = document.getElementById('unmappedAlertBox');
+      if (state.unmappedItems && state.unmappedItems.length > 0) {
+        unmappedBox.classList.remove('hidden');
+        document.getElementById('unmappedCount').textContent = state.unmappedItems.length;
+        document.getElementById('unmappedList').innerHTML = state.unmappedItems.slice(0, 20).map(item =>
+          `<span class="px-2 py-0.5 text-[11px] font-mono bg-white border border-amber-300 rounded text-amber-900">${escapeHtml(item)}</span>`
+        ).join('') + (state.unmappedItems.length > 20 ? `<span class="text-xs text-amber-800 font-bold self-center">+${state.unmappedItems.length - 20} lainnya</span>` : '');
+      } else {
+        unmappedBox.classList.add('hidden');
+      }
+
+      updateTierButtonsUI();
+      refreshDashboard();
     }
 
     // =========================================================================
-    // 4. ENGINE PERHITUNGAN & DIAGNOSIS PER TOKO (R-1 & R-2 LENGKAP)
+    // 4. NSEP EVALUATION & INCENTIVE CALCULATION ENGINE (R-1 & R-2)
     // =========================================================================
-    function evaluateStore(store) {
-      const tier = getEffectiveTier(store.name);
-      const items = [];
-      let pbCount = 0, spCount = 0, cpCount = 0, totalBrandCount = 0;
-      let totalBaselineIncentive = 0;
-      let totalGrowthIncentive = 0;
-      let potentialBlindBonus = 0;
-      let strataAchievedBrands = 0;
-      const missingPB = [];
-      const nearMisses = [];
-
-      NSEP_PRODUCTS.forEach(prod => {
-        const rec = store.products[prod.id] || { vol25: 0, vol26: 0, val26: 0 };
-        const vol25 = Math.round(rec.vol25 * 100) / 100;
-        const vol26 = Math.round(rec.vol26 * 100) / 100;
-        const growthVol = vol26 - vol25;
-
-        const isRelevantToTier = (tier === 'R1') || (prod.portfolio !== 'Strategic Platform');
-        const hasPurchased26 = vol26 > 0;
-
-        if (isRelevantToTier && hasPurchased26) {
-          totalBrandCount++;
-          if (prod.portfolio === 'Power Brand') pbCount++;
-          if (prod.portfolio === 'Strategic Platform') spCount++;
-          if (prod.portfolio === 'Core Portfolio') cpCount++;
-        }
-
-        if (prod.portfolio === 'Power Brand' && !hasPurchased26) {
-          missingPB.push(prod.name);
-        }
-
-        let strataLabel = '-';
-        let rate = 0;
-        let baselineRp = 0;
-        let growthRp = 0;
-        let blindRp = 0;
-        let nextTarget = null;
-        let gapToNext = 0;
-
-        if (tier === 'R1') {
-          const r = prod.r1;
-          let achieved = false;
-          if (r.s1 && vol26 >= r.s1[0]) {
-            strataLabel = 'Strata 1';
-            rate = r.s1[2];
-            achieved = true;
-          } else if (r.s2 && vol26 >= r.s2[0]) {
-            strataLabel = 'Strata 2';
-            rate = r.s2[2];
-            achieved = true;
-            if (r.s1) { nextTarget = `Strata 1 (${formatNum(r.s1[0])} ${prod.unit})`; gapToNext = r.s1[0] - vol26; }
-          } else if (r.s3 && vol26 >= r.s3[0]) {
-            strataLabel = 'Strata 3';
-            rate = r.s3[2];
-            achieved = true;
-            if (r.s2) { nextTarget = `Strata 2 (${formatNum(r.s2[0])} ${prod.unit})`; gapToNext = r.s2[0] - vol26; }
-          } else {
-            const lowest = r.s3 || r.s2 || r.s1;
-            const lowestName = r.s3 ? 'Strata 3' : (r.s2 ? 'Strata 2' : 'Strata 1');
-            if (lowest) {
-              nextTarget = `${lowestName} (${formatNum(lowest[0])} ${prod.unit})`;
-              gapToNext = lowest[0] - vol26;
-              if (vol26 > 0) {
-                nearMisses.push({
-                  name: prod.name,
-                  portfolio: prod.portfolio,
-                  vol26,
-                  unit: prod.unit,
-                  targetVol: lowest[0],
-                  gap: gapToNext,
-                  targetLabel: lowestName,
-                  potentialRp: lowest[0] * lowest[2]
-                });
-              }
-            }
-          }
-
-          if (achieved) {
-            strataAchievedBrands++;
-            baselineRp = vol26 * rate;
-            // Growth Incentive R-1: atas pertumbuhan volume positif dibanding Jul-Des 2025 (jika ada baseline 2025)
-            if (vol25 > 0 && growthVol > 0 && r.growth) {
-              growthRp = growthVol * r.growth;
-            }
-            if (r.blind) {
-              blindRp = vol26 * r.blind;
-            }
-          }
-        } else if (tier === 'R2') {
-          if (prod.r2) {
-            if (vol26 >= prod.r2.minVol) {
-              strataLabel = 'Lolos Min.';
-              rate = prod.r2.rate;
-              baselineRp = vol26 * rate;
-              strataAchievedBrands++;
-            } else {
-              nextTarget = `Min. R2 (${formatNum(prod.r2.minVol)} ${prod.unit})`;
-              gapToNext = prod.r2.minVol - vol26;
-              if (vol26 > 0) {
-                nearMisses.push({
-                  name: prod.name,
-                  portfolio: prod.portfolio,
-                  vol26,
-                  unit: prod.unit,
-                  targetVol: prod.r2.minVol,
-                  gap: gapToNext,
-                  targetLabel: 'Min. R-2',
-                  potentialRp: prod.r2.minVol * prod.r2.rate
-                });
-              }
-            }
-          } else if (prod.portfolio === 'Core Portfolio' && vol26 > 0) {
-            strataLabel = 'Portofolio (Non-Rp)';
-          }
-        }
-
-        totalBaselineIncentive += baselineRp;
-        totalGrowthIncentive += growthRp;
-        potentialBlindBonus += blindRp;
-
-        if (isRelevantToTier) {
-          items.push({
-            ...prod,
-            vol25,
-            vol26,
-            growthVol,
-            strataLabel,
-            rate,
-            incentive: baselineRp,
-            growthRp,
-            blindRp,
-            nextTarget,
-            gapToNext
-          });
-        }
-      });
-
-      const blindBonusQualified = (tier === 'R1' && strataAchievedBrands >= 5);
-      const activeBlindBonus = blindBonusQualified ? potentialBlindBonus : 0;
-      const grandTotalIncentive = tier === 'NON' ? 0 : (totalBaselineIncentive + totalGrowthIncentive + activeBlindBonus);
-
-      const req = tier === 'R1'
-        ? { pb: 2, sp: 3, cp: 3, total: 12 }
-        : { pb: 2, sp: 0, cp: 6, total: 8 };
-
-      const pbOk = pbCount >= req.pb;
-      const spOk = spCount >= req.sp;
-      const cpOk = cpCount >= req.cp;
-      const totalOk = totalBrandCount >= req.total;
-      const isQualified = (tier !== 'NON') && pbOk && spOk && cpOk && totalOk;
-
-      let statusCategory = 'QUALIFIED';
-      if (tier === 'NON') statusCategory = 'NON_PROGRAM';
-      else if (!pbOk) statusCategory = 'MISSING_PB';
-      else if (!isQualified) statusCategory = 'MISSING_BRANDS';
-
-      nearMisses.sort((a, b) => (b.vol26 / b.targetVol) - (a.vol26 / a.targetVol));
-
-      return {
-        store,
-        tier,
-        req,
-        pbCount,
-        spCount,
-        cpCount,
-        totalBrandCount,
-        pbOk,
-        spOk,
-        cpOk,
-        totalOk,
-        isQualified,
-        statusCategory,
-        missingPB,
-        nearMisses,
-        totalBaselineIncentive,
-        totalGrowthIncentive,
-        activeBlindBonus,
-        blindBonusQualified,
-        grandTotalIncentive,
-        strataAchievedBrands,
-        items
-      };
+    function getStoreTier(storeName) {
+      return state.storeTiers[storeName] || state.defaultTier || 'R1';
     }
 
-    // =========================================================================
-    // 5. UI RENDERING, BULK MODAL & EXCEL EXPORT
-    // =========================================================================
     function setDefaultTier(tier) {
       state.defaultTier = tier;
-      updateDefaultTierButtons();
+      updateTierButtonsUI();
       saveStateToStorage();
       if (state.stores.length > 0) refreshDashboard();
+      showToast(`Default skema toko diatur ke ${tier === 'R1' ? 'R-1' : 'R-2'}`, 'bg-emerald-400');
     }
 
-    function updateDefaultTierButtons() {
+    function setStoreTier(storeName, tier) {
+      state.storeTiers[storeName] = tier;
+      saveStateToStorage();
+      refreshDashboard();
+      showToast(`Skema ${storeName} diubah ke ${tier}`, 'bg-emerald-400');
+    }
+
+    function updateTierButtonsUI() {
       const btnR1 = document.getElementById('btnTierR1');
       const btnR2 = document.getElementById('btnTierR2');
       if (state.defaultTier === 'R1') {
@@ -1054,12 +1412,20 @@
       document.getElementById('bulkTierModal').classList.add('hidden');
     }
 
+    function resetAllStoreTiers() {
+      state.storeTiers = {};
+      saveStateToStorage();
+      refreshDashboard();
+      closeBulkTierModal();
+      showToast('Semua tag toko dikembalikan ke skema default.', 'bg-amber-400');
+    }
+
     function applyBulkStoreTiers() {
       const targetTier = document.getElementById('bulkTargetTier').value;
       const lines = document.getElementById('bulkStoreTextarea').value
         .split('\n')
         .map(l => l.trim().toUpperCase())
-        .filter(l => l.length > 0);
+        .filter(Boolean);
 
       if (lines.length === 0) {
         showToast('Masukkan minimal 1 nama toko.', 'bg-amber-400');
@@ -1069,131 +1435,309 @@
       let matchedCount = 0;
       state.stores.forEach(s => {
         const sUpper = s.name.toUpperCase();
-        if (lines.some(line => sUpper === line || sUpper.includes(line))) {
+        if (lines.some(line => sUpper === line || sUpper.includes(line) || line.includes(sUpper))) {
           state.storeTiers[s.name] = targetTier;
           matchedCount++;
         }
       });
 
       saveStateToStorage();
-      closeBulkTierModal();
       refreshDashboard();
-      showToast(`${matchedCount} toko berhasil di-set ke ${targetTier === 'NON' ? 'Non-Program' : targetTier}!`, 'bg-emerald-400');
+      closeBulkTierModal();
+      showToast(`Berhasil mengatur ${matchedCount} toko sebagai ${targetTier}.`, 'bg-emerald-400');
     }
 
-    function resetAllStoreTiers() {
-      state.storeTiers = {};
-      saveStateToStorage();
-      closeBulkTierModal();
-      refreshDashboard();
-      showToast('Semua tag toko dikembalikan ke Default Tier.', 'bg-amber-400');
-    }
-
-    function setStatusFilter(filter) {
-      state.statusFilter = filter;
-      document.querySelectorAll('.filter-pill').forEach(btn => {
-        btn.className = 'filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all';
+    function setStatusFilter(filterKey) {
+      state.statusFilter = filterKey;
+      document.querySelectorAll('.filter-pill').forEach(el => {
+        el.className = 'filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300';
       });
-      const activeBtn = document.getElementById(`filter_${filter}`);
-      if (activeBtn) {
-        activeBtn.className = 'filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-sm transition-all';
+      const activePill = document.getElementById(`filter_${filterKey}`);
+      if (activePill) {
+        activePill.className = 'filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white';
       }
       renderStoreList();
     }
 
+    function evaluateStore(store) {
+      const tier = getStoreTier(store.name);
+      let pbCount = 0;
+      let spCount = 0;
+      let cpCount = 0;
+      let strataHitCount = 0;
+
+      const productRows = [];
+
+      NSEP_PRODUCTS.forEach(prod => {
+        const rec = store.products[prod.id] || { vol25: 0, vol26: 0, val25: 0, val26: 0, preVol26: 0 };
+        const vol25 = rec.vol25;
+        const vol26 = rec.vol26;
+        const val26 = rec.val26 || 0;
+        const preVol26 = rec.preVol26 || 0;
+        const growthVol = vol26 - vol25;
+        const purchased = vol26 > 0;
+
+        if (purchased) {
+          if (prod.portfolio === 'Power Brand') pbCount++;
+          else if (prod.portfolio === 'Strategic Platform') spCount++;
+          else if (prod.portfolio === 'Core Portfolio') cpCount++;
+        }
+
+        let strataLabel = '-';
+        let baseIncentive = 0;
+        let growthIncentive = 0;
+        let blindRate = 0;
+        let nextTargetInfo = null;
+
+        if (tier === 'R1' && prod.r1) {
+          const r = prod.r1;
+          if (r.s1 && vol26 >= r.s1[0]) {
+            strataLabel = 'Strata 1';
+            baseIncentive = vol26 * r.s1[2];
+          } else if (r.s2 && vol26 >= r.s2[0]) {
+            strataLabel = 'Strata 2';
+            baseIncentive = vol26 * r.s2[2];
+            if (r.s1) nextTargetInfo = { targetName: 'Strata 1', targetVol: r.s1[0], gap: r.s1[0] - vol26, rate: r.s1[2] };
+          } else if (r.s3 && vol26 >= r.s3[0]) {
+            strataLabel = 'Strata 3';
+            baseIncentive = vol26 * r.s3[2];
+            if (r.s2) nextTargetInfo = { targetName: 'Strata 2', targetVol: r.s2[0], gap: r.s2[0] - vol26, rate: r.s2[2] };
+          } else {
+            const firstTier = r.s3 ? { name: 'Strata 3', cfg: r.s3 } : (r.s2 ? { name: 'Strata 2', cfg: r.s2 } : (r.s1 ? { name: 'Strata 1', cfg: r.s1 } : null));
+            if (firstTier && purchased) {
+              nextTargetInfo = { targetName: firstTier.name, targetVol: firstTier.cfg[0], gap: firstTier.cfg[0] - vol26, rate: firstTier.cfg[2] };
+            }
+          }
+
+          if (baseIncentive > 0) {
+            strataHitCount++;
+            blindRate = r.blind || 0;
+            // Sesuai Strata Insentif NSEP 2026: Growth cair jika vol26 >= 115% dari vol25 (tumbuh min 15%), max 50% dari vol25
+            if (vol25 > 0 && vol26 >= vol25 * 1.15 && r.growth) {
+              const cappedGrowth = Math.min(growthVol, vol25 * 0.5);
+              growthIncentive = cappedGrowth * r.growth;
+            }
+          }
+        } else if (tier === 'R2' && prod.r2) {
+          if (vol26 >= prod.r2.minVol) {
+            strataLabel = 'Lolos Min';
+            baseIncentive = vol26 * prod.r2.rate;
+            strataHitCount++;
+          } else if (purchased) {
+            nextTargetInfo = { targetName: 'Min. R-2', targetVol: prod.r2.minVol, gap: prod.r2.minVol - vol26, rate: prod.r2.rate };
+          }
+        }
+
+        productRows.push({
+          ...prod,
+          vol25,
+          vol26,
+          val26,
+          preVol26,
+          growthVol,
+          purchased,
+          strataLabel,
+          baseIncentive,
+          growthIncentive,
+          blindRate,
+          nextTargetInfo
+        });
+      });
+
+      // Hitung Blind Bonus R-1 jika >= 4 merek mencapai target strata (sesuai file Strata Insentif 25 Aug26)
+      const blindQualified = tier === 'R1' && strataHitCount >= 4;
+      let totalBase = 0;
+      let totalGrowth = 0;
+      let totalBlind = 0;
+      let totalSalesValue26 = 0;
+
+      productRows.forEach(r => {
+        r.blindIncentive = (blindQualified && r.baseIncentive > 0) ? (r.vol26 * r.blindRate) : 0;
+        r.totalIncentive = r.baseIncentive + r.growthIncentive + r.blindIncentive;
+        totalBase += r.baseIncentive;
+        totalGrowth += r.growthIncentive;
+        totalBlind += r.blindIncentive;
+        totalSalesValue26 += r.val26;
+      });
+
+      // Evaluasi League Ranking (berdasarkan total Rp penjualan produk NSEP)
+      let leagueTier = '-';
+      let leagueBonus = 0;
+      if (tier === 'R1') {
+        if (totalSalesValue26 >= 1250000000) { leagueTier = 'Diamond'; leagueBonus = 24000000; }
+        else if (totalSalesValue26 >= 1000000000) { leagueTier = 'Platinum'; leagueBonus = 20000000; }
+        else if (totalSalesValue26 >= 750000000) { leagueTier = 'Gold'; leagueBonus = 16000000; }
+      } else if (tier === 'R2') {
+        if (totalSalesValue26 >= 350000000) { leagueTier = 'Gold'; leagueBonus = 5000000; }
+        else if (totalSalesValue26 >= 250000000) { leagueTier = 'Silver'; leagueBonus = 4000000; }
+        else if (totalSalesValue26 >= 150000000) { leagueTier = 'Bronze'; leagueBonus = 3000000; }
+      }
+
+      const totalBrands = pbCount + spCount + cpCount;
+      const missingPBNames = productRows.filter(p => p.portfolio === 'Power Brand' && !p.purchased).map(p => p.name);
+
+      let isQualified = false;
+      let missingSummary = [];
+
+      if (tier === 'R1') {
+        const okPB = pbCount === 2;
+        const okSP = spCount >= 3;
+        const okCP = cpCount >= 3;
+        const okTot = totalBrands >= 12;
+        isQualified = okPB && okSP && okCP && okTot;
+
+        if (!okPB) missingSummary.push(`Kurang ${2 - pbCount} Power Brand (${missingPBNames.join(' & ')})`);
+        if (!okSP) missingSummary.push(`Kurang ${3 - spCount} merek Strategic Platform (baru ${spCount}/3)`);
+        if (!okCP) missingSummary.push(`Kurang ${3 - cpCount} merek Core Portfolio (baru ${cpCount}/3)`);
+        if (!okTot) missingSummary.push(`Kurang ${12 - totalBrands} total merek NSEP (baru ${totalBrands}/12)`);
+      } else if (tier === 'R2') {
+        const okPB = pbCount === 2;
+        const okCP = cpCount >= 6;
+        const okTot = totalBrands >= 8;
+        isQualified = okPB && okCP && okTot;
+
+        if (!okPB) missingSummary.push(`Kurang ${2 - pbCount} Power Brand (${missingPBNames.join(' & ')})`);
+        if (!okCP) missingSummary.push(`Kurang ${6 - cpCount} merek Core Portfolio (baru ${cpCount}/6)`);
+        if (!okTot) missingSummary.push(`Kurang ${8 - totalBrands} total merek NSEP (baru ${totalBrands}/8)`);
+      } else {
+        missingSummary.push('Ditandai sebagai Non-Program PKS');
+      }
+
+      const nearMisses = productRows
+        .filter(p => p.purchased && p.nextTargetInfo && p.nextTargetInfo.gap > 0)
+        .sort((a, b) => (a.nextTargetInfo.gap / a.nextTargetInfo.targetVol) - (b.nextTargetInfo.gap / b.nextTargetInfo.targetVol));
+
+      return {
+        tier,
+        pbCount,
+        spCount,
+        cpCount,
+        totalBrands,
+        strataHitCount,
+        blindQualified,
+        isQualified,
+        missingPB: pbCount < 2,
+        missingPBNames,
+        missingSummary,
+        nearMisses,
+        productRows,
+        totalSalesValue26,
+        leagueTier,
+        leagueBonus,
+        totalBase,
+        totalGrowth,
+        totalBlind,
+        grandTotalIncentive: totalBase + totalGrowth + totalBlind + leagueBonus
+      };
+    }
+
+    // =========================================================================
+    // 5. RENDERING UI (KPI CARDS, STORE LIST, DETAIL DIAGNOSIS, EXPORT EXCEL)
+    // =========================================================================
     function refreshDashboard() {
-      const evaluatedAll = state.stores.map(s => evaluateStore(s)).filter(e => e.tier !== 'NON');
+      let countQualified = 0;
+      let countMissingPB = 0;
+      let countMissingBrands = 0;
+      let totalQualifiedIncentive = 0;
 
-      const qualifiedCount = evaluatedAll.filter(e => e.isQualified).length;
-      const missingPBCount = evaluatedAll.filter(e => e.statusCategory === 'MISSING_PB').length;
-      const missingBrandsCount = evaluatedAll.filter(e => e.statusCategory === 'MISSING_BRANDS').length;
-      const totalInc = evaluatedAll.filter(e => e.isQualified).reduce((sum, e) => sum + e.grandTotalIncentive, 0);
+      state.stores.forEach(s => {
+        const ev = evaluateStore(s);
+        if (ev.tier === 'NON') return;
+        if (ev.isQualified) {
+          countQualified++;
+          totalQualifiedIncentive += ev.grandTotalIncentive;
+        } else if (ev.missingPB) {
+          countMissingPB++;
+        } else {
+          countMissingBrands++;
+        }
+      });
 
-      document.getElementById('kpiQualified').textContent = qualifiedCount;
-      document.getElementById('kpiMissingPB').textContent = missingPBCount;
-      document.getElementById('kpiMissingBrands').textContent = missingBrandsCount;
-      document.getElementById('kpiTotalIncentive').textContent = formatRp(totalInc);
+      document.getElementById('kpiQualified').textContent = countQualified;
+      document.getElementById('kpiMissingPB').textContent = countMissingPB;
+      document.getElementById('kpiMissingBrands').textContent = countMissingBrands;
+      document.getElementById('kpiTotalIncentive').textContent = formatRupiah(totalQualifiedIncentive);
 
       renderStoreList();
       renderStoreDetail();
     }
 
     function renderStoreList() {
-      const query = document.getElementById('searchInput').value.toLowerCase().trim();
-      const salesFilter = document.getElementById('salesFilterSelect').value;
       const container = document.getElementById('storeListContainer');
+      const searchQ = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const salesQ = document.getElementById('salesFilterSelect').value;
 
-      const evaluated = state.stores.map(s => evaluateStore(s)).filter(ev => {
-        const matchQuery = !query || ev.store.name.toLowerCase().includes(query) || ev.store.sales.toLowerCase().includes(query);
-        if (!matchQuery) return false;
+      const filtered = state.stores.filter(s => {
+        if (searchQ && !s.name.toLowerCase().includes(searchQ)) return false;
+        if (salesQ !== 'ALL' && !s.sales.includes(salesQ)) return false;
 
-        if (salesFilter !== 'ALL' && !ev.store.sales.includes(salesFilter)) return false;
-
-        if (state.statusFilter === 'QUALIFIED') return ev.isQualified;
-        if (state.statusFilter === 'MISSING_PB') return ev.statusCategory === 'MISSING_PB';
-        if (state.statusFilter === 'MISSING_BRANDS') return ev.statusCategory === 'MISSING_BRANDS';
+        const ev = evaluateStore(s);
+        if (state.statusFilter === 'QUALIFIED') return ev.tier !== 'NON' && ev.isQualified;
+        if (state.statusFilter === 'MISSING_PB') return ev.tier !== 'NON' && ev.missingPB;
+        if (state.statusFilter === 'MISSING_BRANDS') return ev.tier !== 'NON' && !ev.isQualified && !ev.missingPB;
         if (state.statusFilter === 'HAS_INCENTIVE') return ev.grandTotalIncentive > 0;
         if (state.statusFilter === 'TIER_R1') return ev.tier === 'R1';
         if (state.statusFilter === 'TIER_R2') return ev.tier === 'R2';
         return true;
       });
 
-      document.getElementById('storeCountBadge').textContent = `${evaluated.length} Toko`;
+      document.getElementById('storeCountBadge').textContent = `${filtered.length} Toko`;
 
-      if (evaluated.length === 0) {
-        container.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">Tidak ada toko yang sesuai dengan filter pencarian.</div>`;
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">Tidak ada toko yang sesuai dengan filter pencarian.</div>`;
         return;
       }
 
-      container.innerHTML = evaluated.map(ev => {
-        const isSelected = ev.store.name === state.selectedStoreName;
-        const tierPill = ev.tier === 'R1'
-          ? `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-slate-800 text-white">R-1</span>`
-          : (ev.tier === 'R2'
-            ? `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-indigo-600 text-white">R-2</span>`
-            : `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-slate-200 text-slate-600">NON</span>`);
+      container.innerHTML = filtered.map(s => {
+        const ev = evaluateStore(s);
+        const isSelected = s.name === state.selectedStoreName;
+        const reqTotal = ev.tier === 'R1' ? 12 : (ev.tier === 'R2' ? 8 : 0);
 
-        let badgeHtml = '';
+        let statusBadge = '';
         if (ev.tier === 'NON') {
-          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-500">DIABAIKAN</span>`;
+          statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600">NON-PKS</span>`;
         } else if (ev.isQualified) {
-          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">LOLOS SYARAT</span>`;
-        } else if (ev.statusCategory === 'MISSING_PB') {
-          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-rose-100 text-rose-800 border border-rose-200">KURANG PB</span>`;
+          statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-800">LOLOS SYARAT</span>`;
+        } else if (ev.missingPB) {
+          statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-rose-100 text-rose-800">KURANG PB</span>`;
         } else {
-          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-amber-100 text-amber-800 border border-amber-200">KURANG MEREK</span>`;
+          statusBadge = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-800">KURANG MEREK</span>`;
         }
 
+        const tierPill = ev.tier === 'R1'
+          ? `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-slate-900 text-white">R-1</span>`
+          : (ev.tier === 'R2'
+            ? `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-600 text-white">R-2</span>`
+            : `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-slate-400 text-white">NON</span>`);
+
         return `
-          <div onclick="selectStore('${escapeQuotes(ev.store.name)}')" class="p-3.5 cursor-pointer transition-all ${isSelected ? 'bg-emerald-50/80 border-l-4 border-emerald-600' : 'hover:bg-slate-50 border-l-4 border-transparent'}">
+          <div onclick="selectStore('${escapeJs(s.name)}')" class="p-3.5 cursor-pointer transition-all ${isSelected ? 'bg-emerald-50/80 border-l-4 border-emerald-600' : 'hover:bg-slate-50'}">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
                   ${tierPill}
-                  <p class="text-xs sm:text-sm font-bold text-slate-900 truncate">${ev.store.name}</p>
+                  <p class="text-xs font-extrabold text-slate-900 truncate">${escapeHtml(s.name)}</p>
                 </div>
-                <p class="text-[11px] text-slate-500 truncate mt-0.5">Sales: ${ev.store.sales}</p>
+                <p class="text-[11px] text-slate-500 mt-0.5 truncate">Sales: ${escapeHtml(s.sales)}</p>
               </div>
-              <div class="shrink-0">${badgeHtml}</div>
-            </div>
-            <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 text-[11px]">
-              <div class="flex items-center gap-2 font-mono font-semibold text-slate-600">
-                <span class="${ev.pbOk ? 'text-emerald-700' : 'text-rose-600'}">PB:${ev.pbCount}/${ev.req.pb}</span>
-                ${ev.tier === 'R1' ? `<span class="${ev.spOk ? 'text-emerald-700' : 'text-amber-600'}">SP:${ev.spCount}/${ev.req.sp}</span>` : ''}
-                <span class="${ev.cpOk ? 'text-emerald-700' : 'text-amber-600'}">CP:${ev.cpCount}/${ev.req.cp}</span>
-                <span class="${ev.totalOk ? 'text-emerald-700 font-bold' : 'text-slate-700'}">Tot:${ev.totalBrandCount}/${ev.req.total}</span>
+              <div class="shrink-0 text-right">
+                ${statusBadge}
+                <p class="text-[11px] font-mono font-bold text-slate-700 mt-1">${ev.tier === 'NON' ? `${ev.totalBrands} Merek` : `${ev.totalBrands}/${reqTotal} Merek`}</p>
               </div>
-              <span class="font-mono font-bold ${ev.grandTotalIncentive > 0 ? 'text-emerald-700' : 'text-slate-400'}">
-                ${ev.grandTotalIncentive > 0 ? formatRp(ev.grandTotalIncentive) : 'Rp 0'}
-              </span>
             </div>
+            ${ev.grandTotalIncentive > 0 ? `
+              <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span class="text-slate-500">Est. Insentif (${ev.strataHitCount} item capai target):</span>
+                <span class="font-mono font-extrabold text-emerald-700">${formatRupiah(ev.grandTotalIncentive)}</span>
+              </div>
+            ` : ''}
           </div>
         `;
       }).join('');
     }
 
-    function selectStore(storeName) {
-      state.selectedStoreName = storeName;
+    function selectStore(name) {
+      state.selectedStoreName = name;
       renderStoreList();
       renderStoreDetail();
     }
@@ -1202,371 +1746,337 @@
       const container = document.getElementById('storeDetailContainer');
       const store = state.stores.find(s => s.name === state.selectedStoreName);
       if (!store) {
-        container.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-sm text-slate-500">Pilih toko di daftar sebelah kiri untuk melihat audit lengkap.</div>`;
+        container.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-sm text-slate-500">Pilih salah satu toko di sebelah kiri untuk melihat rincian evaluasi.</div>`;
         return;
       }
 
       const ev = evaluateStore(store);
-      const storeTier = ev.tier;
+      const pLabel = getPeriodLabel();
 
-      // Bangun daftar kekurangan tegas (Actionable Gaps)
-      const missingAlerts = [];
-      if (storeTier === 'NON') {
-        missingAlerts.push(`<strong>NON-PROGRAM:</strong> Toko ini ditandai sebagai pelanggan umum / non-peserta PKS NSEP 2026.`);
-      } else {
-        if (!ev.pbOk) {
-          missingAlerts.push(`<strong>WAJIB POWER BRAND:</strong> Belum ambil <u>${ev.missingPB.join(' & ')}</u>. Tanpa 2 Power Brand ini, insentif tidak dapat dicairkan.`);
-        }
-        if (storeTier === 'R1' && !ev.spOk) {
-          missingAlerts.push(`<strong>KURANG STRATEGIC PLATFORM:</strong> Baru ambil <strong>${ev.spCount} dari min. ${ev.req.sp} merek</strong> (kurang <strong>${ev.req.sp - ev.spCount} merek SP</strong> lagi).`);
-        }
-        if (!ev.cpOk) {
-          missingAlerts.push(`<strong>KURANG CORE PORTFOLIO:</strong> Baru ambil <strong>${ev.cpCount} dari min. ${ev.req.cp} merek</strong> (kurang <strong>${ev.req.cp - ev.cpCount} merek CP</strong> lagi).`);
-        }
-        if (!ev.totalOk) {
-          missingAlerts.push(`<strong>KURANG TOTAL MEREK NSEP:</strong> Total baru <strong>${ev.totalBrandCount} dari min. ${ev.req.total} merek</strong> (kurang <strong>${ev.req.total - ev.totalBrandCount} merek</strong> lagi).`);
-        }
-      }
-
-      const activeItems = ev.items.filter(it => it.vol25 > 0 || it.vol26 > 0);
-      const untouchedItems = ev.items.filter(it => it.vol25 === 0 && it.vol26 === 0);
-
-      container.innerHTML = `
-        <!-- STORE HEADER CARD -->
-        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      const headerBanner = `
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <!-- Individual Store Tier Switcher -->
-                <div class="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-300">
-                  <button onclick="setStoreTier('${escapeQuotes(store.name)}', 'R1')" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md transition-all ${storeTier === 'R1' ? 'bg-slate-900 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">R-1</button>
-                  <button onclick="setStoreTier('${escapeQuotes(store.name)}', 'R2')" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md transition-all ${storeTier === 'R2' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">R-2</button>
-                  <button onclick="setStoreTier('${escapeQuotes(store.name)}', 'NON')" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md transition-all ${storeTier === 'NON' ? 'bg-slate-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">Non-PKS</button>
-                </div>
-
-                ${storeTier === 'NON'
-                  ? `<span class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-md bg-slate-100 text-slate-600 border border-slate-300">PELANGGAN UMUM</span>`
-                  : (ev.isQualified
-                    ? `<span class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">✓ KOMPOSISI MEREK SAH</span>`
-                    : `<span class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-md bg-rose-100 text-rose-800 border border-rose-300">✕ BELUM MEMENUHI SYARAT PORTOFOLIO</span>`
-                  )
-                }
+                <h2 class="text-lg font-extrabold text-slate-900">${escapeHtml(store.name)}</h2>
+                <span class="px-2.5 py-0.5 text-xs font-extrabold rounded-lg ${ev.isQualified ? 'bg-emerald-100 text-emerald-800' : (ev.missingPB ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')}">
+                  ${ev.tier === 'NON' ? 'NON-PROGRAM' : (ev.isQualified ? 'MEMENUHI SYARAT PORTOFOLIO' : 'BELUM MEMENUHI SYARAT')}
+                </span>
               </div>
-              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 mt-2">${store.name}</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Sales Representative: <strong class="text-slate-700">${store.sales}</strong></p>
+              <p class="text-xs text-slate-500 mt-1">Sales Penanggung Jawab: <strong class="text-slate-700">${escapeHtml(store.sales)}</strong> • Periode Evaluasi: <strong class="text-slate-700">${pLabel} (2025 vs 2026)</strong></p>
             </div>
 
-            <!-- Copy WA Summary Button -->
-            <button onclick="copyWhatsAppReport()" class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold shadow transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-              </svg>
-              <span>Copy Laporan WA</span>
-            </button>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <select onchange="setStoreTier('${escapeJs(store.name)}', this.value)" class="px-2.5 py-2 rounded-xl border border-slate-300 bg-slate-50 text-xs font-extrabold text-slate-800">
+                <option value="R1" ${ev.tier === 'R1' ? 'selected' : ''}>Skema R-1 (Min. 12 Merek)</option>
+                <option value="R2" ${ev.tier === 'R2' ? 'selected' : ''}>Skema R-2 (Min. 8 Merek)</option>
+                <option value="NON" ${ev.tier === 'NON' ? 'selected' : ''}>Non-Program PKS</option>
+              </select>
+              <button onclick="generateAiStoreAdvice('${escapeJs(store.name)}')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow transition-all">
+                <span>✨ Saran AI</span>
+              </button>
+              <button onclick="copyWhatsAppReport('${escapeJs(store.name)}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-all">
+                <span>Copy Laporan WA</span>
+              </button>
+            </div>
           </div>
 
-          <!-- PORTFOLIO CHECKLIST BARS -->
-          <div class="grid grid-cols-2 sm:grid-cols-${storeTier === 'R1' ? '4' : '3'} gap-3 mt-5 pt-4 border-t border-slate-100">
-            <div class="p-3 rounded-xl border ${ev.pbOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-rose-50 border-rose-200'}">
-              <p class="text-[11px] font-bold uppercase ${ev.pbOk ? 'text-emerald-800' : 'text-rose-800'}">Power Brand</p>
-              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.pbOk ? 'text-emerald-700' : 'text-rose-600'}">${ev.pbCount} / ${ev.req.pb}</p>
-              <p class="text-[10px] font-semibold mt-0.5 ${ev.pbOk ? 'text-emerald-600' : 'text-rose-600'}">${ev.pbOk ? 'Lengkap' : 'Kurang ' + (ev.req.pb - ev.pbCount) + ' merek'}</p>
+          <!-- Kotak Rekomendasi AI per Toko -->
+          <div id="aiStoreAdviceBox" class="${state.aiAdviceCache[store.name] ? '' : 'hidden'} p-4 rounded-xl bg-indigo-50 border border-indigo-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-extrabold uppercase tracking-wider text-indigo-900">✨ Rekomendasi Strategi Penawaran AI (Berdasarkan Historis 2025 & Gap 2026)</h4>
+              <button onclick="document.getElementById('aiStoreAdviceBox').classList.add('hidden')" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-900">Sembunyikan</button>
+            </div>
+            <div id="aiStoreAdviceContent" class="text-xs text-slate-800 whitespace-pre-line leading-relaxed">${state.aiAdviceCache[store.name] ? escapeHtml(state.aiAdviceCache[store.name]) : ''}</div>
+          </div>
+
+          <!-- Ringkasan Komposisi Portofolio -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100">
+            <div class="p-3 rounded-xl ${ev.pbCount === 2 ? 'bg-emerald-50 border border-emerald-200' : 'bg-rose-50 border border-rose-200'}">
+              <p class="text-[11px] font-bold text-slate-600">Power Brand</p>
+              <p class="text-base font-extrabold font-mono ${ev.pbCount === 2 ? 'text-emerald-700' : 'text-rose-700'}">${ev.pbCount} / 2 Merek</p>
+            </div>
+            <div class="p-3 rounded-xl ${ev.tier === 'R2' ? 'bg-slate-50 border border-slate-200' : (ev.spCount >= 3 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200')}">
+              <p class="text-[11px] font-bold text-slate-600">Strategic Platform</p>
+              <p class="text-base font-extrabold font-mono text-slate-900">${ev.tier === 'R2' ? `${ev.spCount} (Opsional)` : `${ev.spCount} / 3 Merek`}</p>
+            </div>
+            <div class="p-3 rounded-xl ${ev.cpCount >= (ev.tier === 'R2' ? 6 : 3) ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}">
+              <p class="text-[11px] font-bold text-slate-600">Core Portfolio</p>
+              <p class="text-base font-extrabold font-mono text-slate-900">${ev.cpCount} / ${ev.tier === 'R2' ? 6 : 3} Merek</p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900 text-white">
+              <p class="text-[11px] font-bold text-slate-400">Total Merek NSEP</p>
+              <p class="text-base font-extrabold font-mono text-emerald-400">${ev.totalBrands} / ${ev.tier === 'R2' ? 8 : 12} Merek</p>
+            </div>
+          </div>
+
+          <!-- Kotak Diagnosis Kekurangan & Peluang Kejar Target -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="p-3.5 rounded-xl ${ev.isQualified ? 'bg-emerald-50 border border-emerald-200' : 'bg-rose-50 border border-rose-200'}">
+              <h4 class="text-xs font-extrabold uppercase tracking-wider ${ev.isQualified ? 'text-emerald-900' : 'text-rose-900'} mb-1.5">
+                ${ev.isQualified ? '✅ Syarat Portofolio Lengkap' : '⚠️ Apa yang Masih Kurang (Syarat Wajib)'}
+              </h4>
+              ${ev.isQualified
+                ? `<p class="text-xs text-emerald-800">Komposisi merek sudah memenuhi seluruh kriteria minimum PKS ${ev.tier === 'R1' ? 'R-1' : 'R-2'}.</p>`
+                : `<ul class="text-xs text-rose-800 space-y-1">${ev.missingSummary.map(m => `<li>• ${escapeHtml(m)}</li>`).join('')}</ul>`
+              }
             </div>
 
-            ${storeTier === 'R1' ? `
-            <div class="p-3 rounded-xl border ${ev.spOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50 border-amber-200'}">
-              <p class="text-[11px] font-bold uppercase ${ev.spOk ? 'text-emerald-800' : 'text-amber-800'}">Strategic Plat.</p>
-              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.spOk ? 'text-emerald-700' : 'text-amber-600'}">${ev.spCount} / ${ev.req.sp}</p>
-              <p class="text-[10px] font-semibold mt-0.5 ${ev.spOk ? 'text-emerald-600' : 'text-amber-600'}">${ev.spOk ? 'Memenuhi' : 'Kurang ' + (ev.req.sp - ev.spCount) + ' merek'}</p>
-            </div>` : ''}
-
-            <div class="p-3 rounded-xl border ${ev.cpOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50 border-amber-200'}">
-              <p class="text-[11px] font-bold uppercase ${ev.cpOk ? 'text-emerald-800' : 'text-amber-800'}">Core Portfolio</p>
-              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.cpOk ? 'text-emerald-700' : 'text-amber-600'}">${ev.cpCount} / ${ev.req.cp}</p>
-              <p class="text-[10px] font-semibold mt-0.5 ${ev.cpOk ? 'text-emerald-600' : 'text-amber-600'}">${ev.cpOk ? 'Memenuhi' : 'Kurang ' + (ev.req.cp - ev.cpCount) + ' merek'}</p>
+            <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200">
+              <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 mb-1.5">🎯 Peluang Kejar Volume (Nanggung Target)</h4>
+              ${ev.nearMisses.length === 0
+                ? `<p class="text-xs text-amber-800">Belum ada produk yang mendekati batas strata berikutnya.</p>`
+                : `<ul class="text-xs text-amber-900 space-y-1">${ev.nearMisses.slice(0, 4).map(nm =>
+                    `<li>• <strong>${escapeHtml(nm.name)}</strong>: baru ${formatNum(nm.vol26)} ${nm.unit} (kurang <strong>${formatNum(nm.nextTargetInfo.gap)} ${nm.unit}</strong> ke ${nm.nextTargetInfo.targetName})</li>`
+                  ).join('')}</ul>`
+              }
             </div>
+          </div>
 
-            <div class="p-3 rounded-xl border ${ev.totalOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-slate-100 border-slate-300'}">
-              <p class="text-[11px] font-bold uppercase text-slate-700">Total Merek</p>
-              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.totalOk ? 'text-emerald-700' : 'text-slate-900'}">${ev.totalBrandCount} / ${ev.req.total}</p>
-              <p class="text-[10px] font-semibold mt-0.5 ${ev.totalOk ? 'text-emerald-600' : 'text-slate-600'}">${ev.totalOk ? 'Lolos Total' : 'Kurang ' + (ev.req.total - ev.totalBrandCount) + ' merek'}</p>
+          <!-- Rincian Estimasi Insentif -->
+          <div class="bg-slate-900 text-white rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-4 text-xs">
+              <div><span class="text-slate-400">Baseline:</span> <strong class="font-mono">${formatRupiah(ev.totalBase)}</strong></div>
+              ${ev.tier === 'R1' ? `
+                <div><span class="text-slate-400">Growth (≥115%):</span> <strong class="font-mono">${formatRupiah(ev.totalGrowth)}</strong></div>
+                <div><span class="text-slate-400">Blind (${ev.strataHitCount}/4 br):</span> <strong class="font-mono">${formatRupiah(ev.totalBlind)}</strong></div>
+              ` : ''}
+              <div><span class="text-slate-400">League (${ev.leagueTier}):</span> <strong class="font-mono text-amber-300">${formatRupiah(ev.leagueBonus)}</strong></div>
+            </div>
+            <div class="text-right">
+              <span class="text-[11px] uppercase tracking-wider text-emerald-400 font-bold block">Total Est. Insentif</span>
+              <span class="text-base font-extrabold font-mono text-white">${formatRupiah(ev.grandTotalIncentive)}</span>
             </div>
           </div>
         </div>
+      `;
 
-        <!-- ACTIONABLE DIAGNOSIS: APA YANG KURANG & GAP KE TARGET -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Kotak 1: Kekurangan Syarat Portofolio -->
-          <div class="rounded-2xl p-4 border ${missingAlerts.length > 0 ? 'bg-rose-50/80 border-rose-200' : 'bg-emerald-50/80 border-emerald-200'}">
-            <h3 class="text-xs font-extrabold uppercase tracking-wider ${missingAlerts.length > 0 ? 'text-rose-800' : 'text-emerald-800'} flex items-center gap-1.5">
-              <span>${missingAlerts.length > 0 ? '⚠️ Kekurangan Syarat Portofolio' : '✅ Status Syarat Portofolio'}</span>
-            </h3>
-            ${missingAlerts.length > 0 ? `
-              <ul class="mt-2.5 space-y-2 text-xs text-rose-900">
-                ${missingAlerts.map(msg => `<li class="flex items-start gap-2"><span class="font-bold text-rose-600">•</span><span>${msg}</span></li>`).join('')}
-              </ul>
-            ` : `
-              <p class="mt-2 text-xs text-emerald-800 leading-relaxed">
-                Komposisi merek toko ini sudah <strong>MEMENUHI SYARAT PKS ${storeTier}</strong>. Fokus berikutnya adalah mendorong volume produk agar menembus strata insentif tertinggi${storeTier === 'R1' ? ' (dan mengejar min. 5 merek capai strata untuk Blind Bonus)' : ''}.
-              </p>
-            `}
-          </div>
+      // Tabel Rincian 33 Merek NSEP
+      const activeRows = ev.productRows.filter(r => r.vol25 > 0 || r.vol26 > 0 || r.preVol26 > 0);
+      const unpurchasedRows = ev.productRows.filter(r => r.vol25 === 0 && r.vol26 === 0);
 
-          <!-- Kotak 2: Produk Nanggung Target (Near-Miss Volume) -->
-          <div class="rounded-2xl p-4 bg-amber-50/80 border border-amber-200">
-            <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900">
-              🎯 Peluang Kejar Volume (Belum Tembus Target)
-            </h3>
-            ${ev.nearMisses.length > 0 ? `
-              <ul class="mt-2.5 space-y-2 text-xs text-amber-950">
-                ${ev.nearMisses.slice(0, 4).map(nm => `
-                  <li class="bg-white/80 p-2 rounded-lg border border-amber-200/80">
-                    <div class="flex justify-between font-bold">
-                      <span>${nm.name}</span>
-                      <span class="font-mono text-amber-700">${formatNum(nm.vol26)} / ${formatNum(nm.targetVol)} ${nm.unit}</span>
-                    </div>
-                    <p class="text-[11px] text-slate-600 mt-0.5">
-                      Kurang <strong class="text-rose-600">${formatNum(nm.gap)} ${nm.unit}</strong> lagi untuk tembus <strong>${nm.targetLabel}</strong> (potensi min. ${formatRp(nm.potentialRp)}).
-                    </p>
-                  </li>
-                `).join('')}
-              </ul>
-            ` : `
-              <p class="mt-2 text-xs text-amber-900">
-                Semua produk yang diambil sudah mencapai batas minimum atau belum ada pembelian baru di periode Jul–Des 2026.
-              </p>
-            `}
-          </div>
-        </div>
-
-        <!-- TABEL PERBANDINGAN VOLUME 2025 VS 2026 & ESTIMASI INSENTIF -->
+      const tableHtml = `
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-2">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h3 class="text-sm font-extrabold text-slate-900">Rincian Produk Diambil (Jul–Des 2025 vs 2026)</h3>
-                <p class="text-xs text-slate-500">
-                  Total Estimasi Insentif: <strong class="text-emerald-700 font-mono text-sm">${formatRp(ev.grandTotalIncentive)}</strong>
-                  ${!ev.isQualified && ev.grandTotalIncentive > 0 ? '<span class="text-rose-600 font-bold">(Tertahan syarat merek!)</span>' : ''}
-                </p>
-              </div>
-              ${storeTier === 'R1' ? `<span class="text-[11px] font-bold px-2.5 py-1 rounded-lg ${ev.blindBonusQualified ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-800'}">Blind Bonus: ${ev.strataAchievedBrands} / 5 Merek Strata ${ev.blindBonusQualified ? '(AKTIF!)' : ''}</span>` : ''}
-            </div>
-            ${storeTier === 'R1' && ev.grandTotalIncentive > 0 ? `
-              <div class="flex flex-wrap gap-3 text-[11px] font-mono text-slate-600 pt-1">
-                <span>Baseline: <strong>${formatRp(ev.totalBaselineIncentive)}</strong></span>
-                <span>•</span>
-                <span>Est. Growth: <strong>${formatRp(ev.totalGrowthIncentive)}</strong></span>
-                <span>•</span>
-                <span>Blind Bonus: <strong>${formatRp(ev.activeBlindBonus)}</strong></span>
-              </div>
-            ` : ''}
+          <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-800">Rincian Transaksi Produk NSEP (${pLabel} 2025 vs 2026)</h3>
+            <span class="text-xs text-slate-500">${activeRows.length} Produk Ada Transaksi</span>
           </div>
-
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="bg-slate-100 text-[11px] font-extrabold uppercase text-slate-600 border-b border-slate-200">
-                  <th class="py-2.5 px-3">Portofolio</th>
-                  <th class="py-2.5 px-3">Merek NSEP</th>
-                  <th class="py-2.5 px-3 text-right">Jul–Des 25</th>
-                  <th class="py-2.5 px-3 text-right">Jul–Des 26</th>
-                  <th class="py-2.5 px-3 text-right">Growth</th>
-                  <th class="py-2.5 px-3">Status / Kekurangan</th>
-                  <th class="py-2.5 px-3 text-right">Est. Insentif</th>
+                <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
+                  <th class="py-2.5 px-3 font-bold">Portofolio & Merek</th>
+                  <th class="py-2.5 px-3 font-bold text-right">${pLabel} 2025</th>
+                  <th class="py-2.5 px-3 font-bold text-right">${pLabel} 2026</th>
+                  <th class="py-2.5 px-3 font-bold text-right">Growth</th>
+                  <th class="py-2.5 px-3 font-bold text-center">Status</th>
+                  <th class="py-2.5 px-3 font-bold text-right">Est. Insentif</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 text-xs">
-                ${activeItems.length === 0 ? `
-                  <tr><td colspan="7" class="py-6 text-center text-slate-500">Belum ada transaksi produk NSEP pada periode Jul–Des 2025 maupun 2026.</td></tr>
-                ` : activeItems.map(it => {
-                  const portBadge = it.portfolio === 'Power Brand'
-                    ? 'bg-rose-100 text-rose-800'
-                    : (it.portfolio === 'Strategic Platform' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800');
-                  const growthColor = it.growthVol > 0 ? 'text-emerald-600' : (it.growthVol < 0 ? 'text-rose-600' : 'text-slate-400');
-                  const rowTotalRp = it.incentive + it.growthRp + (ev.blindBonusQualified ? it.blindRp : 0);
+              <tbody class="divide-y divide-slate-100">
+                ${activeRows.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada pembelian produk NSEP pada periode ${pLabel}.</td></tr>` : ''}
+                ${activeRows.map(r => {
+                  const badgeCls = r.portfolio === 'Power Brand' ? 'bg-rose-100 text-rose-800' : (r.portfolio === 'Strategic Platform' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800');
+                  const growthCls = r.growthVol > 0 ? 'text-emerald-600' : (r.growthVol < 0 ? 'text-rose-600' : 'text-slate-400');
                   return `
-                    <tr class="hover:bg-slate-50/80">
-                      <td class="py-2.5 px-3 whitespace-nowrap">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${portBadge}">${it.portfolio === 'Power Brand' ? 'PB' : (it.portfolio === 'Strategic Platform' ? 'SP' : 'CP')}</span>
-                      </td>
-                      <td class="py-2.5 px-3 font-bold text-slate-900">${it.name}</td>
-                      <td class="py-2.5 px-3 text-right font-mono text-slate-500">${formatNum(it.vol25)} ${it.unit}</td>
-                      <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">${formatNum(it.vol26)} ${it.unit}</td>
-                      <td class="py-2.5 px-3 text-right font-mono font-semibold ${growthColor}">${it.growthVol > 0 ? '+' : ''}${formatNum(it.growthVol)}</td>
+                    <tr class="hover:bg-slate-50">
                       <td class="py-2.5 px-3">
-                        ${it.incentive > 0
-                          ? `<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">${it.strataLabel} (@Rp${formatNum(it.rate)})</span>`
-                          : (it.nextTarget ? `<span class="text-[11px] text-amber-700 font-medium">Kurang ${formatNum(it.gapToNext)} ${it.unit} ke ${it.nextTarget.split(' ')[0]}</span>` : `<span class="text-[11px] text-slate-400">-</span>`)
+                        <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded ${badgeCls} mr-1">${r.portfolio === 'Power Brand' ? 'PB' : (r.portfolio === 'Strategic Platform' ? 'SP' : 'CP')}</span>
+                        <span class="font-bold text-slate-900">${escapeHtml(r.name)}</span>
+                      </td>
+                      <td class="py-2.5 px-3 text-right font-mono text-slate-600">${formatNum(r.vol25)} ${r.unit}</td>
+                      <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                        ${formatNum(r.vol26)} ${r.unit}
+                        ${r.preVol26 > 0 ? `<span class="block text-[10px] font-normal text-slate-400" title="Pembelian Jan–Jun 2026 (di luar periode PKS Jul–Des)">+ ${formatNum(r.preVol26)} ${r.unit} (Jan–Jun)</span>` : ''}
+                      </td>
+                      <td class="py-2.5 px-3 text-right font-mono font-semibold ${growthCls}">${r.growthVol > 0 ? '+' : ''}${formatNum(r.growthVol)}</td>
+                      <td class="py-2.5 px-3 text-center">
+                        ${r.strataLabel !== '-'
+                          ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-800">${r.strataLabel}</span>`
+                          : `<span class="text-[11px] text-slate-400">${r.purchased ? 'Belum Strata' : '-'}</span>`
                         }
                       </td>
-                      <td class="py-2.5 px-3 text-right font-mono font-bold ${rowTotalRp > 0 ? 'text-emerald-700' : 'text-slate-400'}">
-                        ${rowTotalRp > 0 ? formatRp(rowTotalRp) : '-'}
-                      </td>
+                      <td class="py-2.5 px-3 text-right font-mono font-bold ${r.totalIncentive > 0 ? 'text-emerald-700' : 'text-slate-400'}">${r.totalIncentive > 0 ? formatRupiah(r.totalIncentive) : '-'}</td>
                     </tr>
                   `;
                 }).join('')}
               </tbody>
             </table>
           </div>
-
-          <!-- Rekomendasi Merek yang Belum Pernah Diambil -->
           <div class="p-4 bg-slate-50 border-t border-slate-200">
-            <p class="text-xs font-bold text-slate-700 mb-2">Merek NSEP ${storeTier} yang Belum Diambil Toko Ini (${untouchedItems.length} merek):</p>
+            <p class="text-[11px] font-bold text-slate-600 mb-2">Merek NSEP yang Belum Diambil Sama Sekali (${unpurchasedRows.length} Merek):</p>
             <div class="flex flex-wrap gap-1.5">
-              ${untouchedItems.map(u => {
+              ${unpurchasedRows.map(u => {
                 const isPB = u.portfolio === 'Power Brand';
-                return `<span class="px-2 py-1 rounded-lg text-[11px] font-medium border ${isPB ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold' : 'bg-white text-slate-600 border-slate-200'}">${u.name} (${u.portfolio === 'Power Brand' ? 'PB WAJIB' : (u.portfolio === 'Strategic Platform' ? 'SP' : 'CP')})</span>`;
+                return `<span class="px-2 py-0.5 text-[11px] rounded-md border ${isPB ? 'bg-rose-50 border-rose-300 text-rose-800 font-bold' : 'bg-white border-slate-200 text-slate-600'}">${isPB ? '[WAJIB PB] ' : ''}${escapeHtml(u.name)}</span>`;
               }).join('')}
             </div>
           </div>
         </div>
       `;
+
+      container.innerHTML = headerBanner + tableHtml;
     }
 
-    // =========================================================================
-    // 6. COPY WHATSAPP REPORT & EXPORT EXCEL REKAP
-    // =========================================================================
-    function copyWhatsAppReport() {
-      const store = state.stores.find(s => s.name === state.selectedStoreName);
+    function copyWhatsAppReport(storeName) {
+      const store = state.stores.find(s => s.name === storeName);
       if (!store) return;
       const ev = evaluateStore(store);
+      const pLabel = getPeriodLabel();
 
-      let lines = [];
-      lines.push(`*UPDATE EVALUASI NSEP 2026 (${ev.tier})*`);
-      lines.push(`Toko: *${store.name}*`);
-      lines.push(`Sales: ${store.sales}`);
-      lines.push(`Status Portofolio: *${ev.isQualified ? 'LOLOS SYARAT' : 'BELUM MEMENUHI SYARAT'}*`);
-      lines.push(``);
-      lines.push(`*Komposisi Merek (Jul–Des 2026):*`);
-      lines.push(`- Power Brand: ${ev.pbCount}/${ev.req.pb} merek ${ev.pbOk ? '(OK)' : '(KURANG)'}`);
-      if (ev.tier === 'R1') {
-        lines.push(`- Strategic Platform: ${ev.spCount}/${ev.req.sp} merek ${ev.spOk ? '(OK)' : '(KURANG)'}`);
-      }
-      lines.push(`- Core Portfolio: ${ev.cpCount}/${ev.req.cp} merek ${ev.cpOk ? '(OK)' : '(KURANG)'}`);
-      lines.push(`- Total Merek NSEP: ${ev.totalBrandCount}/${ev.req.total} merek`);
+      // 1. Produk yang sudah diambil DAN sudah tercapai target strata/minimum
+      const achievedLines = ev.productRows
+        .filter(r => r.purchased && r.strataLabel !== '-')
+        .map(r => {
+          const nextNote = r.nextTargetInfo
+            ? ` _(kurang ${formatNum(r.nextTargetInfo.gap)} ${r.unit} ke ${r.nextTargetInfo.targetName})_`
+            : '';
+          return `✅ *${r.name}*: ${formatNum(r.vol26)} ${r.unit} (${r.strataLabel} • Est. ${formatRupiah(r.totalIncentive)})${nextNote}`;
+        })
+        .join('\n');
 
-      if (!ev.isQualified && ev.tier !== 'NON') {
-        lines.push(``);
-        lines.push(`*Kekurangan Syarat Merek:*`);
-        if (!ev.pbOk) lines.push(`! Wajib tambah Power Brand: ${ev.missingPB.join(' & ')}`);
-        if (ev.tier === 'R1' && !ev.spOk) lines.push(`! Tambah min. ${ev.req.sp - ev.spCount} merek Strategic Platform`);
-        if (!ev.cpOk) lines.push(`! Tambah min. ${ev.req.cp - ev.cpCount} merek Core Portfolio`);
-        if (!ev.totalOk) lines.push(`! Tambah min. ${ev.req.total - ev.totalBrandCount} merek lagi agar genap ${ev.req.total} merek`);
-      }
+      // 2. Produk yang sudah diambil TAPI belum tercapai target minimum/strata
+      const unachievedLines = ev.productRows
+        .filter(r => r.purchased && r.strataLabel === '-')
+        .map(r => {
+          const gapNote = r.nextTargetInfo
+            ? `Target ${r.nextTargetInfo.targetName}: ${formatNum(r.nextTargetInfo.targetVol)} ${r.unit} ➔ *Kurang ${formatNum(r.nextTargetInfo.gap)} ${r.unit}*`
+            : 'Non-insentif (terhitung sebagai merek portofolio)';
+          return `⏳ *${r.name}*: baru ${formatNum(r.vol26)} ${r.unit} (${gapNote})`;
+        })
+        .join('\n');
 
-      if (ev.nearMisses.length > 0) {
-        lines.push(``);
-        lines.push(`*Peluang Kejar Target Volume:*`);
-        ev.nearMisses.slice(0, 4).forEach(nm => {
-          lines.push(`- ${nm.name}: ${formatNum(nm.vol26)} ${nm.unit} (kurang ${formatNum(nm.gap)} ${nm.unit} ke ${nm.targetLabel})`);
-        });
-      }
+      // 3. Kekurangan syarat komposisi merek wajib
+      const missingPortfolioLines = ev.isQualified
+        ? '✅ Sudah memenuhi seluruh syarat komposisi merek!'
+        : ev.missingSummary.map(m => `❌ ${m}`).join('\n');
 
-      lines.push(``);
-      lines.push(`Est. Total Insentif Berjalan: *${formatRp(ev.grandTotalIncentive)}*`);
+      const text = `*UPDATE PENCAPAIAN NSEP 2026*
+*Toko:* ${store.name}
+*Skema:* ${ev.tier === 'R1' ? 'R-1 (Min. 12 Merek)' : (ev.tier === 'R2' ? 'R-2 (Min. 8 Merek)' : 'Non-Program')}
+*Periode:* ${pLabel} 2026
+*Sales:* ${store.sales}
 
-      const text = lines.join('\n');
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
+*1. STATUS SYARAT MEREK (${ev.totalBrands} Merek):*
+• Power Brand: ${ev.pbCount}/2
+• Strategic Platform: ${ev.spCount}${ev.tier === 'R1' ? '/3' : ''}
+• Core Portfolio: ${ev.cpCount}/${ev.tier === 'R2' ? 6 : 3}
+${missingPortfolioLines}
+
+*2. PRODUK SUDAH TERCAPAI TARGET (BERINSENTIF):*
+${achievedLines || '- Belum ada produk yang mencapai target volume.'}
+
+*3. PRODUK SUDAH DIAMBIL TAPI BELUM TERCAPAI TARGET:*
+${unachievedLines || '- Tidak ada (semua produk yang diambil sudah capai target).'}
+
+*4. ESTIMASI TOTAL INSENTIF SEMENTARA:* *${formatRupiah(ev.grandTotalIncentive)}*
+_(Syarat pencairan: komposisi merek wajib terpenuhi s/d 31 Des 2026)_`;
+
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
       document.execCommand('copy');
-      document.body.removeChild(textarea);
-
-      showToast('Laporan WhatsApp berhasil disalin ke clipboard!', 'bg-emerald-400');
+      document.body.removeChild(ta);
+      showToast('Laporan WA (Tercapai & Belum Tercapai) berhasil disalin!', 'bg-emerald-400');
     }
 
     function exportToExcel() {
-      if (!state.stores || state.stores.length === 0) return;
+      if (!state.stores || state.stores.length === 0) {
+        showToast('Belum ada data toko untuk di-export.', 'bg-amber-400');
+        return;
+      }
 
-      const summaryRows = [];
-      const detailRows = [];
-
-      state.stores.forEach(s => {
+      const pLabel = getPeriodLabel();
+      const summaryData = state.stores.map(s => {
         const ev = evaluateStore(s);
-        const gaps = [];
-        if (ev.tier !== 'NON') {
-          if (!ev.pbOk) gaps.push(`Kurang PB (${ev.missingPB.join(' & ')})`);
-          if (ev.tier === 'R1' && !ev.spOk) gaps.push(`Kurang ${ev.req.sp - ev.spCount} SP`);
-          if (!ev.cpOk) gaps.push(`Kurang ${ev.req.cp - ev.cpCount} CP`);
-          if (!ev.totalOk) gaps.push(`Kurang ${ev.req.total - ev.totalBrandCount} Total Merek`);
-        }
-
-        summaryRows.push({
+        return {
           'Nama Toko': s.name,
           'Sales': s.sales,
           'Skema': ev.tier,
-          'Status Kelayakan': ev.tier === 'NON' ? 'Non-Program' : (ev.isQualified ? 'LOLOS SYARAT' : 'BELUM MEMENUHI'),
-          'Power Brand': `${ev.pbCount}/${ev.req.pb}`,
-          'Strategic Platform': ev.tier === 'R1' ? `${ev.spCount}/${ev.req.sp}` : '-',
-          'Core Portfolio': `${ev.cpCount}/${ev.req.cp}`,
-          'Total Merek': `${ev.totalBrandCount}/${ev.req.total}`,
-          'Merek Capai Strata': ev.strataAchievedBrands,
-          'Catatan Kekurangan Syarat': gaps.join('; ') || 'Lengkap',
-          'Est. Baseline (Rp)': Math.round(ev.totalBaselineIncentive),
-          'Est. Growth (Rp)': Math.round(ev.totalGrowthIncentive),
-          'Est. Blind Bonus (Rp)': Math.round(ev.activeBlindBonus),
-          'Est. Total Insentif (Rp)': Math.round(ev.grandTotalIncentive)
-        });
+          'Periode Evaluasi': `${pLabel} (2025 vs 2026)`,
+          'Status Kelayakan': ev.tier === 'NON' ? 'NON-PROGRAM' : (ev.isQualified ? 'LOLOS SYARAT' : (ev.missingPB ? 'KURANG POWER BRAND' : 'KURANG MEREK')),
+          'Power Brand (Wajib 2)': ev.pbCount,
+          'Strategic Platform': ev.spCount,
+          'Core Portfolio': ev.cpCount,
+          'Total Merek NSEP': ev.totalBrands,
+          'Merek Capai Strata': ev.strataHitCount,
+          'Keterangan Kekurangan': ev.isQualified ? 'Lengkap' : ev.missingSummary.join('; '),
+          'Omzet NSEP 2026 (Rp)': ev.totalSalesValue26,
+          'League Tier': ev.leagueTier,
+          'Est. Baseline (Rp)': ev.totalBase,
+          'Est. Growth (Rp)': ev.totalGrowth,
+          'Est. Blind Bonus (Rp)': ev.totalBlind,
+          'Est. League Bonus (Rp)': ev.leagueBonus,
+          'Total Est. Insentif (Rp)': ev.grandTotalIncentive
+        };
+      });
 
-        ev.items.forEach(it => {
-          if (it.vol25 > 0 || it.vol26 > 0) {
-            detailRows.push({
+      const detailData = [];
+      state.stores.forEach(s => {
+        const ev = evaluateStore(s);
+        ev.productRows.forEach(r => {
+          if (r.vol25 > 0 || r.vol26 > 0) {
+            detailData.push({
               'Nama Toko': s.name,
-              'Sales': s.sales,
               'Skema': ev.tier,
-              'Portofolio': it.portfolio,
-              'Merek NSEP': it.name,
-              'Satuan': it.unit,
-              'Vol Jul-Des 2025': it.vol25,
-              'Vol Jul-Des 2026': it.vol26,
-              'Growth Vol': it.growthVol,
-              'Status Strata': it.strataLabel,
-              'Gap ke Target Berikutnya': it.gapToNext > 0 ? it.gapToNext : 0,
-              'Est. Baseline (Rp)': Math.round(it.incentive),
-              'Est. Growth (Rp)': Math.round(it.growthRp),
-              'Est. Blind Bonus (Rp)': ev.blindBonusQualified ? Math.round(it.blindRp) : 0
+              'Portofolio': r.portfolio,
+              'Merek NSEP': r.name,
+              'Satuan': r.unit,
+              [`Volume ${pLabel} 2025`]: r.vol25,
+              [`Volume ${pLabel} 2026`]: r.vol26,
+              'Growth Volume': r.growthVol,
+              'Status Strata': r.strataLabel,
+              'Est. Insentif (Rp)': r.totalIncentive
             });
           }
         });
       });
 
       const wb = XLSX.utils.book_new();
-      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
-      const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+      const wsDetail = XLSX.utils.json_to_sheet(detailData);
       XLSX.utils.book_append_sheet(wb, wsSummary, 'Rekap Kelayakan Toko');
-      XLSX.utils.book_append_sheet(wb, wsDetail, 'Rincian Produk 2025 vs 2026');
-
-      const dateTag = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(wb, `Rekap_Audit_NSEP_2026_${dateTag}.xlsx`);
-      showToast('File Excel Rekap berhasil di-download!', 'bg-emerald-400');
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'Rincian Produk per Toko');
+      XLSX.writeFile(wb, `Rekap_NSEP_2026_${pLabel}.xlsx`);
+      showToast('File Rekap Excel berhasil di-download!', 'bg-emerald-400');
     }
 
     // =========================================================================
-    // 7. HELPER FORMATTING & TOAST
+    // 6. HELPER FUNCTIONS
     // =========================================================================
-    function formatNum(num) {
-      if (num === null || num === undefined) return '0';
-      return Number(num).toLocaleString('id-ID', { maximumFractionDigits: 2 });
-    }
-
-    function formatRp(num) {
+    function formatRupiah(num) {
       return 'Rp ' + Math.round(num || 0).toLocaleString('id-ID');
     }
 
-    function escapeQuotes(str) {
-      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    function formatNum(num) {
+      return Number(num || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
     }
 
-    let toastTimeout = null;
-    function showToast(msg, dotColorClass = 'bg-emerald-400') {
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    let toastTimer = null;
+    function showToast(msg, dotColorClass) {
       const toast = document.getElementById('toast');
-      document.getElementById('toastMsg').textContent = msg;
-      document.getElementById('toastIcon').className = `w-2.5 h-2.5 rounded-full ${dotColorClass}`;
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      toastMsg.textContent = msg;
+      toastIcon.className = `w-2.5 h-2.5 rounded-full ${dotColorClass || 'bg-emerald-400'}`;
       toast.classList.remove('hidden');
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => toast.classList.add('hidden'), 3200);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
     }
   </script>
 </body>
