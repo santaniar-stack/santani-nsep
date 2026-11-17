@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NSEP 2026 Program Tracker & Audit Generator</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS untuk membaca file .xls, .xlsx, dan .csv secara instan di browser -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar untuk tampilan yang bersih dan modern */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION / HEADER BAR -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950 font-extrabold text-lg shadow-inner">
+          S
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight">SANTANI NSEP 2026</h1>
+            <span class="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full">
+              Audit & Incentive Engine
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Periode Program: 01 Jul 2026 – 31 Des 2026 (Komparasi Jul–Des 2025)</p>
+        </div>
+      </div>
+
+      <!-- Tier Switcher & Upload Trigger -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Export Excel Rekap Button -->
+        <button id="btnExportExcel" onclick="exportToExcel()" class="hidden inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white text-xs font-bold shadow transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span>Export Excel</span>
+        </button>
+
+        <!-- Default Tier untuk Toko Baru -->
+        <div class="bg-slate-800 p-1 rounded-xl border border-slate-700 flex items-center" title="Default Skema untuk toko yang belum di-tag manual">
+          <span class="text-[10px] font-bold text-slate-400 px-2 hidden md:inline">DEFAULT:</span>
+          <button id="btnTierR1" onclick="setDefaultTier('R1')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-500 text-slate-950 shadow">
+            R-1
+          </button>
+          <button id="btnTierR2" onclick="setDefaultTier('R2')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white">
+            R-2
+          </button>
+        </div>
+
+        <!-- Upload New File Button -->
+        <label for="fileInput" class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-slate-900 hover:bg-slate-100 active:scale-[0.99] text-xs font-bold shadow transition-all">
+          <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <span>Upload Data Accurate</span>
+        </label>
+        <input id="fileInput" type="file" accept=".xls,.xlsx,.csv" class="hidden" onchange="handleFileUpload(event)" />
+      </div>
+    </div>
+  </header>
+
+  <!-- NOTIFICATION TOAST (Pengganti alert) -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
+    <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 text-sm font-medium">
+      <span id="toastIcon" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+      <span id="toastMsg">Pesan notifikasi</span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- EMPTY / DROPZONE STATE (Muncul sebelum file diupload) -->
+    <div id="dropzoneSection" class="my-6">
+      <div id="dropArea" class="bg-white border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-8 sm:p-12 text-center transition-all shadow-sm cursor-pointer" onclick="document.getElementById('fileInput').click()">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-900 mb-1">Tarik & Lepas File Export Accurate di Sini</h2>
+        <p class="text-sm text-slate-500 max-w-xl mx-auto mb-6">
+          Mendukung format <span class="font-semibold text-slate-700">.xls</span>, <span class="font-semibold text-slate-700">.xlsx</span>, maupun <span class="font-semibold text-slate-700">.csv</span> (seperti <code class="bg-slate-100 px-1.5 py-0.5 rounded text-xs">2025-NOV26 PENJUALAN.xls</code>). Sistem otomatis membaca periode Jul–Des 2025 & 2026 serta mengonversi satuan kemasan ke Kg/Liter.
+        </p>
+        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold shadow hover:bg-slate-800">
+          Pilih File dari Komputer / HP
+        </div>
+      </div>
+
+      <!-- Panduan Ringkas Aturan PKS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-900 text-white">Acuan PKS R-1 (Retailer 1)</span>
+            <span class="text-xs font-semibold text-slate-500">Min. 12 Merek</span>
+          </div>
+          <ul class="text-xs text-slate-600 space-y-1.5 mt-3">
+            <li>• <strong class="text-slate-900">Power Brand:</strong> Wajib 2 merek (<em>Nitrophoska 15.15.15</em> & <em>Cantik</em>)</li>
+            <li>• <strong class="text-slate-900">Strategic Platform:</strong> Minimum 3 merek (dari 11 merek terdaftar)</li>
+            <li>• <strong class="text-slate-900">Core Portfolio:</strong> Minimum 3 merek (dari 19 merek terdaftar)</li>
+            <li>• <strong class="text-slate-900">Insentif:</strong> Berjenjang Strata 3, Strata 2, Strata 1 + Growth + Blind Bonus (≥5 merek capai strata)</li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-emerald-600 text-white">Acuan PKS R-2 (Retailer 2)</span>
+            <span class="text-xs font-semibold text-slate-500">Min. 8 Merek</span>
+          </div>
+          <ul class="text-xs text-slate-600 space-y-1.5 mt-3">
+            <li>• <strong class="text-slate-900">Power Brand:</strong> Wajib 2 merek (<em>Nitrophoska 15.15.15</em> ≥ 750 Kg & <em>Cantik</em> ≥ 500 Kg)</li>
+            <li>• <strong class="text-slate-900">Core Portfolio:</strong> Minimum 6 merek (dari 19 merek terdaftar)</li>
+            <li>• <strong class="text-slate-900">Strategic Platform:</strong> Tidak masuk skema / tidak diwajibkan di R-2</li>
+            <li>• <strong class="text-slate-900">Insentif:</strong> Fixed Baseline (Rp/Kg) jika mencapai volume minimum per produk</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD WORKSPACE (Muncul setelah data berhasil diproses) -->
+    <div id="dashboardSection" class="hidden space-y-6">
+
+      <!-- File Info & Period Banner -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="flex items-start sm:items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse mt-1 sm:mt-0 shrink-0"></span>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="text-xs text-slate-500 font-medium">File Aktif: <strong id="activeFileName" class="text-slate-900">-</strong></p>
+              <span id="lastSavedBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">Tersimpan Otomatis</span>
+            </div>
+            <p id="activeDataStats" class="text-xs text-slate-600 mt-0.5">-</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openBulkTierModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-bold transition-all">
+            Atur Massal R-1 / R-2
+          </button>
+          <button onclick="clearSavedData()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all">
+            Reset Cache
+          </button>
+        </div>
+      </div>
+
+      <!-- UNMAPPED ITEMS AUDIT ALERT (Muncul otomatis jika ada barang pupuk baru/typo yang belum ter-mapping) -->
+      <div id="unmappedAlertBox" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h4 class="text-xs font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+              <span>🔍 Audit Log: Item Pupuk Non-NSEP / Belum Ter-mapping (<span id="unmappedCount">0</span> item)</span>
+            </h4>
+            <p class="text-xs text-amber-800 mt-1">Item di bawah ini tercatat di file Accurate namun tidak masuk dalam 32 Merek Master NSEP (misal: ZA, Nitrea, NPK 12.12.17, atau penulisan baru):</p>
+            <div id="unmappedList" class="flex flex-wrap gap-1.5 mt-2.5"></div>
+          </div>
+          <button onclick="document.getElementById('unmappedAlertBox').classList.add('hidden')" class="text-amber-700 hover:text-amber-950 text-xs font-bold px-2 py-1">Tutup</button>
+        </div>
+      </div>
+
+      <!-- 4 EXECUTIVE KPI CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: Lolos Syarat -->
+        <div onclick="setStatusFilter('QUALIFIED')" class="cursor-pointer bg-white rounded-2xl p-4 border-l-4 border-emerald-500 border-y border-r border-slate-200 shadow-sm hover:shadow-md transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Lolos Syarat Merek</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-md">AMAN</span>
+          </div>
+          <p id="kpiQualified" class="text-3xl font-extrabold text-slate-900 mt-2 font-mono">0</p>
+          <p id="kpiQualifiedSub" class="text-xs text-slate-500 mt-1">Sesuai kasta R-1 / R-2 masing-masing</p>
+        </div>
+
+        <!-- KPI 2: Kurang Power Brand (Kritis) -->
+        <div onclick="setStatusFilter('MISSING_PB')" class="cursor-pointer bg-white rounded-2xl p-4 border-l-4 border-rose-600 border-y border-r border-slate-200 shadow-sm hover:shadow-md transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Kurang Power Brand</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-rose-100 text-rose-800 rounded-md">KRITIS</span>
+          </div>
+          <p id="kpiMissingPB" class="text-3xl font-extrabold text-rose-600 mt-2 font-mono">0</p>
+          <p class="text-xs text-slate-500 mt-1">Wajib NPK 15.15.15 & Cantik</p>
+        </div>
+
+        <!-- KPI 3: Kurang Jumlah Merek -->
+        <div onclick="setStatusFilter('MISSING_BRANDS')" class="cursor-pointer bg-white rounded-2xl p-4 border-l-4 border-amber-500 border-y border-r border-slate-200 shadow-sm hover:shadow-md transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Kurang Merek Wajib</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-md">PERLU KEJAR</span>
+          </div>
+          <p id="kpiMissingBrands" class="text-3xl font-extrabold text-amber-600 mt-2 font-mono">0</p>
+          <p id="kpiMissingBrandsSub" class="text-xs text-slate-500 mt-1">PB lengkap, kurang SP/CP/Total</p>
+        </div>
+
+        <!-- KPI 4: Estimasi Total Insentif -->
+        <div onclick="setStatusFilter('ALL')" class="cursor-pointer bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 shadow-sm hover:shadow-md transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Est. Total Insentif Sah</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 rounded-md">BASE + GROWTH + BLIND</span>
+          </div>
+          <p id="kpiTotalIncentive" class="text-2xl font-extrabold text-white mt-2 font-mono truncate">Rp 0</p>
+          <p class="text-xs text-slate-400 mt-1">Akumulasi toko yang lolos syarat</p>
+        </div>
+      </div>
+
+      <!-- SPLIT WORKSPACE: LEFT = STORE LIST, RIGHT = STORE AUDIT DETAIL -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT COLUMN: FILTER & STORE LIST (5 cols) -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-slate-200 bg-slate-50 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wide">Daftar Toko / Pelanggan</h3>
+              <span id="storeCountBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">0 Toko</span>
+            </div>
+
+            <!-- Search Input & Sales Filter -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="relative">
+                <input id="searchInput" type="text" oninput="renderStoreList()" placeholder="Cari toko / kota..." class="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+              <select id="salesFilterSelect" onchange="renderStoreList()" class="w-full px-2.5 py-2 text-xs font-semibold bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700">
+                <option value="ALL">Semua Sales / Penjual</option>
+              </select>
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="setStatusFilter('ALL')" id="filter_ALL" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white">Semua</button>
+              <button onclick="setStatusFilter('QUALIFIED')" id="filter_QUALIFIED" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Lolos Syarat</button>
+              <button onclick="setStatusFilter('MISSING_PB')" id="filter_MISSING_PB" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Kurang PB</button>
+              <button onclick="setStatusFilter('MISSING_BRANDS')" id="filter_MISSING_BRANDS" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Kurang Merek</button>
+              <button onclick="setStatusFilter('HAS_INCENTIVE')" id="filter_HAS_INCENTIVE" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Ada Insentif</button>
+              <button onclick="setStatusFilter('TIER_R1')" id="filter_TIER_R1" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Khusus R-1</button>
+              <button onclick="setStatusFilter('TIER_R2')" id="filter_TIER_R2" class="filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300">Khusus R-2</button>
+            </div>
+          </div>
+
+          <!-- Scrollable Store List -->
+          <div id="storeListContainer" class="divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+            <!-- Diisi dinamis oleh JS -->
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: DETAILED STORE DIAGNOSIS & TABLE (7 cols) -->
+        <div id="storeDetailContainer" class="lg:col-span-7 space-y-5">
+          <!-- Diisi dinamis saat toko dipilih -->
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL BULK ASSIGN R-1 / R-2 / NON-PROGRAM -->
+  <div id="bulkTierModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-extrabold text-slate-900">Atur Massal Kategori Toko (R-1 / R-2 / Non-PKS)</h3>
+        <button onclick="closeBulkTierModal()" class="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Paste daftar nama toko peserta <strong>R-1</strong> atau <strong>R-2</strong> dari daftar PKS (satu nama toko per baris). Sistem akan otomatis mencocokkan dan menyimpan statusnya secara permanen di browser ini.
+      </p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-800 mb-1">Set sebagai Tier:</label>
+          <select id="bulkTargetTier" class="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-slate-50">
+            <option value="R1">R-1 (Retailer 1 - Min. 12 Merek)</option>
+            <option value="R2">R-2 (Retailer 2 - Min. 8 Merek)</option>
+            <option value="NON">Non-Program (Abaikan dari KPI)</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetAllStoreTiers()" class="w-full px-3 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300">
+            Reset Semua ke Default
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-800 mb-1">Paste Nama Toko (1 baris = 1 toko):</label>
+        <textarea id="bulkStoreTextarea" rows="6" placeholder="Contoh:&#10;PUTRA BAROKAH, TOKO - SUMEDANG&#10;PARA TANI, TOKO- GARUT" class="w-full p-3 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeBulkTierModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">Batal</button>
+        <button onclick="applyBulkStoreTiers()" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow">Terapkan & Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. MASTER DATA PRODUK NSEP 2026 (LAMPIRAN 2 PKS R-1 & R-2)
+    // =========================================================================
+    const NSEP_PRODUCTS = [
+      // POWER BRAND (2 Merek Wajib)
+      { id: 'pb_npk15', name: 'Nitrophoska 15.15.15', portfolio: 'Power Brand', unit: 'Kg',
+        r1: { s3: [6000, 30000, 100], s2: [30001, 100000, 150], s1: [100001, Infinity, 200], growth: 130, blind: 33 },
+        r2: { minVol: 750, rate: 100 } },
+      { id: 'pb_cantik', name: 'Cantik', portfolio: 'Power Brand', unit: 'Kg',
+        r1: { s3: [5000, 20000, 100], s2: [20001, 80000, 150], s1: [80001, Infinity, 200], growth: 130, blind: 33 },
+        r2: { minVol: 500, rate: 100 } },
+
+      // STRATEGIC PLATFORM (11 Merek - R1 Min. 3 Merek)
+      { id: 'sp_smgold', name: 'Santamikro Gold', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: [1.5, 4.5, 15000], s2: [4.6, 12.5, 17500], s1: [12.51, Infinity, 20000], growth: 17500, blind: 4500 },
+        r2: null },
+      { id: 'sp_jagaair', name: 'Jagaair', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: [100, 500, 5000], s2: [501, 1200, 6000], s1: [1201, Infinity, 8150], growth: 6000, blind: 1700 },
+        r2: null },
+      { id: 'sp_ascofol', name: 'Santagrow Ascofol', portfolio: 'Strategic Platform', unit: 'Ltr',
+        r1: { s3: [20, 60, 5500], s2: [61, 150, 6000], s1: [151, Infinity, 8150], growth: 6000, blind: 1700 },
+        r2: null },
+      { id: 'sp_k40', name: 'Santagrow K40', portfolio: 'Strategic Platform', unit: 'Ltr',
+        r1: { s3: [30, 80, 5500], s2: [81, 150, 6000], s1: [151, Infinity, 8150], growth: 6000, blind: 2000 },
+        r2: null },
+      { id: 'sp_loubang', name: 'Santagrow Loubang', portfolio: 'Strategic Platform', unit: 'Ltr',
+        r1: { s3: [10, 20, 5500], s2: [21, 30, 6000], s1: [31, Infinity, 8150], growth: 6000, blind: 2000 },
+        r2: null },
+      { id: 'sp_cuan', name: 'Cuan', portfolio: 'Strategic Platform', unit: 'Ltr',
+        r1: { s3: [20, 60, 1500], s2: [61, 150, 2000], s1: [151, Infinity, 2500], growth: 2000, blind: 450 },
+        r2: null },
+      { id: 'sp_perfect', name: 'Nitrophoska Perfect', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: null, s2: [1000, 2500, 450], s1: [2501, Infinity, 700], growth: 450, blind: 125 },
+        r2: null },
+      { id: 'sp_special', name: 'Nitrophoska Special', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: null, s2: [500, 1500, 450], s1: [1501, Infinity, 700], growth: 450, blind: 125 },
+        r2: null },
+      { id: 'sp_triokali', name: 'TrioKali', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: null, s2: [5000, 15000, 450], s1: [15001, Infinity, 700], growth: 450, blind: 125 },
+        r2: null },
+      { id: 'sp_ureon', name: 'Ureon', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: [5000, 18000, 125], s2: [18001, 45000, 150], s1: [45001, Infinity, 175], growth: 150, blind: 50 },
+        r2: null },
+      { id: 'sp_sulphos', name: 'Sulphos', portfolio: 'Strategic Platform', unit: 'Kg',
+        r1: { s3: [3000, 10000, 50], s2: [10001, 25000, 75], s1: [25001, Infinity, 100], growth: 75, blind: 25 },
+        r2: null },
+
+      // CORE PORTFOLIO (19 Merek - R1 Min. 3 Merek, R2 Min. 6 Merek)
+      { id: 'cp_entec13', name: 'Entec 13.10.20', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: [4000, 12000, 250], s2: [12001, 25000, 300], s1: [25001, Infinity, 350], growth: 300, blind: 100 },
+        r2: { minVol: 1200, rate: 150 } },
+      { id: 'cp_entec20', name: 'Entec 20.10.10', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: [5000, 20000, 250], s2: [20001, 45000, 300], s1: [45001, Infinity, 350], growth: 300, blind: 100 },
+        r2: { minVol: 2000, rate: 150 } },
+      { id: 'cp_knock', name: 'Knock', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [600, 1800, 400], s1: [1801, Infinity, 500], growth: 400, blind: 125 },
+        r2: { minVol: 150, rate: 200 } },
+      { id: 'cp_uren', name: 'Uren', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [700, 2000, 400], s1: [2001, Infinity, 500], growth: 400, blind: 125 },
+        r2: { minVol: 150, rate: 200 } },
+      { id: 'cp_nk15', name: 'Santagrow NK 15.0.15', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [600, 1800, 400], s1: [1801, Infinity, 500], growth: 400, blind: 125 },
+        r2: { minVol: 150, rate: 200 } },
+      { id: 'cp_calnit', name: 'Santani Calnit', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [250, 600, 400], s1: [601, Infinity, 500], growth: 400, blind: 125 },
+        r2: { minVol: 50, rate: 200 } },
+      { id: 'cp_carate', name: 'Santani Carate (Canibor)', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [5000, 15000, 400], s1: [15001, Infinity, 500], growth: 400, blind: 125 },
+        r2: { minVol: 1000, rate: 200 } },
+      { id: 'cp_mgnitrat', name: 'Magnesium Nitrat Flakes', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [250, 600, 250], s1: [601, Infinity, 350], growth: 250, blind: 75 },
+        r2: { minVol: 50, rate: 100 } },
+      { id: 'cp_mgsulfat', name: 'Magnesium Sulfat', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [5000, 15000, 250], s1: [15001, Infinity, 350], growth: 250, blind: 75 },
+        r2: { minVol: 1250, rate: 100 } },
+      { id: 'cp_mkp', name: 'MKP', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: [500, 2200, 150], s2: [2201, 8000, 200], s1: [8001, Infinity, 250], growth: 200, blind: 50 },
+        r2: { minVol: 275, rate: 100 } },
+      { id: 'cp_map', name: 'MAP', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: [250, 1200, 150], s2: [1201, 4000, 200], s1: [4001, Infinity, 250], growth: 200, blind: 50 },
+        r2: { minVol: 150, rate: 100 } },
+      { id: 'cp_cankali', name: 'Cankali', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [1000, 3000, 250], s1: [3001, Infinity, 350], growth: 250, blind: 75 },
+        r2: { minVol: 200, rate: 100 } },
+      { id: 'cp_zk', name: 'Santagrow ZK', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [1000, 3000, 250], s1: [3001, Infinity, 350], growth: 250, blind: 75 },
+        r2: { minVol: 200, rate: 100 } },
+      { id: 'cp_kno3', name: 'S.grow NOP (KNO3 Putih)', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [4000, 10000, 250], s1: [10001, Infinity, 350], growth: 250, blind: 75 },
+        r2: { minVol: 800, rate: 100 } },
+      { id: 'cp_npk16', name: 'Nitrophoska 16.16.16', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [4000, 10000, 125], s1: [10001, Infinity, 175], growth: 125, blind: 50 },
+        r2: { minVol: 800, rate: 50 } },
+      { id: 'cp_npk17', name: 'Nitrophoska 17.17.17', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [4000, 10000, 125], s1: [10001, Infinity, 175], growth: 125, blind: 50 },
+        r2: { minVol: 800, rate: 50 } },
+      { id: 'cp_santaphos', name: 'Santaphos', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: [800, 2000, 75], s1: [2001, Infinity, 125], growth: 75, blind: 30 },
+        r2: { minVol: 200, rate: 20 } },
+      { id: 'cp_kcl', name: 'Santagrow KCl Granular', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: null, s1: [45000, Infinity, 20], growth: 15, blind: 10 },
+        r2: null },
+      { id: 'cp_tsp', name: 'Cap Kuda Sakti TSP', portfolio: 'Core Portfolio', unit: 'Kg',
+        r1: { s3: null, s2: null, s1: [30000, Infinity, 20], growth: 15, blind: 10 },
+        r2: null }
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE & PERSISTENCE (LOCALSTORAGE)
+    // =========================================================================
+    const STORAGE_KEY_DATA = 'santani_nsep_2026_data_v2';
+    const STORAGE_KEY_TIERS = 'santani_nsep_2026_store_tiers_v2';
+
+    let state = {
+      defaultTier: 'R1', // 'R1' atau 'R2' untuk toko yang belum di-tag khusus
+      storeTiers: {}, // { 'NAMA TOKO': 'R1' | 'R2' | 'NON' }
+      stores: [], // Array hasil agregasi per toko
+      unmappedItems: [], // Daftar nama barang di Accurate yang tidak masuk 32 Merek NSEP
+      selectedStoreName: null,
+      statusFilter: 'ALL',
+      fileName: '',
+      lastUpdated: ''
+    };
+
+    // Load saved data & custom store tiers saat halaman dibuka
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        const savedTiers = localStorage.getItem(STORAGE_KEY_TIERS);
+        if (savedTiers) state.storeTiers = JSON.parse(savedTiers);
+
+        const savedData = localStorage.getItem(STORAGE_KEY_DATA);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (parsed && Array.isArray(parsed.stores) && parsed.stores.length > 0) {
+            state.stores = parsed.stores;
+            state.unmappedItems = parsed.unmappedItems || [];
+            state.fileName = parsed.fileName || 'Data Tersimpan';
+            state.lastUpdated = parsed.lastUpdated || '-';
+            state.defaultTier = parsed.defaultTier || 'R1';
+            state.selectedStoreName = state.stores[0].name;
+
+            updateDefaultTierButtons();
+            populateSalesDropdown();
+            document.getElementById('dropzoneSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('btnExportExcel').classList.remove('hidden');
+            document.getElementById('activeFileName').textContent = state.fileName;
+            document.getElementById('lastSavedBadge').textContent = `Auto-Saved: ${state.lastUpdated}`;
+            document.getElementById('activeDataStats').textContent =
+              `Total ${state.stores.length} Pelanggan Aktif di Periode Jul–Des (2025 & 2026)`;
+
+            renderUnmappedAlert();
+            refreshDashboard();
+            showToast('Data terakhir berhasil dimuat otomatis dari memori browser!', 'bg-emerald-400');
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal memuat cache localStorage:', e);
+      }
+    });
+
+    function saveStateToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_TIERS, JSON.stringify(state.storeTiers));
+        const payload = {
+          stores: state.stores,
+          unmappedItems: state.unmappedItems,
+          fileName: state.fileName,
+          lastUpdated: state.lastUpdated,
+          defaultTier: state.defaultTier
+        };
+        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Storage penuh atau dibatasi browser:', e);
+      }
+    }
+
+    function clearSavedData() {
+      localStorage.removeItem(STORAGE_KEY_DATA);
+      state.stores = [];
+      state.unmappedItems = [];
+      state.selectedStoreName = null;
+      document.getElementById('dashboardSection').classList.add('hidden');
+      document.getElementById('btnExportExcel').classList.add('hidden');
+      document.getElementById('dropzoneSection').classList.remove('hidden');
+      showToast('Cache data dibersihkan. Silakan upload file baru.', 'bg-amber-400');
+    }
+
+    function getEffectiveTier(storeName) {
+      return state.storeTiers[storeName] || state.defaultTier;
+    }
+
+    function setStoreTier(storeName, newTier) {
+      state.storeTiers[storeName] = newTier;
+      saveStateToStorage();
+      refreshDashboard();
+      showToast(`${storeName} diatur ke skema ${newTier === 'NON' ? 'Non-Program' : newTier}`, 'bg-emerald-400');
+    }
+
+    // =========================================================================
+    // 3. DRAG & DROP + FILE PARSING (EXCEL & CSV ACCURATE)
+    // =========================================================================
+    const dropArea = document.getElementById('dropArea');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evtName => {
+      dropArea.addEventListener(evtName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+    ['dragenter', 'dragover'].forEach(evtName => {
+      dropArea.addEventListener(evtName, () => dropArea.classList.add('border-emerald-500', 'bg-emerald-50/40'), false);
+    });
+    ['dragleave', 'drop'].forEach(evtName => {
+      dropArea.addEventListener(evtName, () => dropArea.classList.remove('border-emerald-500', 'bg-emerald-50/40'), false);
+    });
+    dropArea.addEventListener('drop', e => {
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) processFile(files[0]);
+    }, false);
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) processFile(file);
+    }
+
+    function processFile(file) {
+      state.fileName = file.name;
+      const now = new Date();
+      state.lastUpdated = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+                          now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      showToast('Membaca & memproses data transaksi...', 'bg-amber-400');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+          const parsedTransactions = extractTransactionsFromRows(rows);
+          if (parsedTransactions.length === 0) {
+            showToast('Tidak ditemukan transaksi valid. Pastikan format export Accurate sesuai.', 'bg-rose-500');
+            return;
+          }
+
+          aggregateByStore(parsedTransactions);
+          saveStateToStorage();
+
+          populateSalesDropdown();
+          document.getElementById('dropzoneSection').classList.add('hidden');
+          document.getElementById('dashboardSection').classList.remove('hidden');
+          document.getElementById('btnExportExcel').classList.remove('hidden');
+          document.getElementById('activeFileName').textContent = state.fileName;
+          document.getElementById('lastSavedBadge').textContent = `Auto-Saved: ${state.lastUpdated}`;
+
+          renderUnmappedAlert();
+          refreshDashboard();
+          showToast(`Berhasil memproses & menyimpan ${parsedTransactions.length.toLocaleString('id-ID')} baris transaksi!`, 'bg-emerald-400');
+        } catch (err) {
+          console.error(err);
+          showToast('Gagal membaca file: ' + err.message, 'bg-rose-500');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Parser tanggal Indonesia Accurate ('30 Jan 2025', '08 Agu 2025', '04 Nop 2026', dll)
+    const MONTH_MAP = {
+      'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'mei': 5, 'may': 5, 'jun': 6,
+      'jul': 7, 'agu': 8, 'aug': 8, 'sep': 9, 'okt': 10, 'oct': 10, 'nop': 11, 'nov': 11, 'des': 12, 'dec': 12
+    };
+
+    function parseAccurateDate(val) {
+      if (!val) return null;
+      if (typeof val === 'number') {
+        // Excel serial date
+        const dateObj = XLSX.SSF.parse_date_code(val);
+        if (dateObj) return { year: dateObj.y, month: dateObj.m, day: dateObj.d };
+      }
+      const str = String(val).trim();
+      const parts = str.split(/[\s\-\/]+/);
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const mKey = parts[1].toLowerCase().substring(0, 3);
+        const m = MONTH_MAP[mKey] || parseInt(parts[1], 10);
+        let y = parseInt(parts[2], 10);
+        if (y < 100) y += 2000;
+        if (!isNaN(d) && !isNaN(m) && !isNaN(y) && m >= 1 && m <= 12) {
+          return { year: y, month: m, day: d };
+        }
+      }
+      return null;
+    }
+
+    function cleanNumber(val) {
+      if (typeof val === 'number') return val;
+      if (!val) return 0;
+      const cleaned = String(val).replace(/,/g, '').trim();
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    // Mapper Nama Barang Accurate -> ID Produk NSEP + Konversi Satuan ke KG/LTR
+    function mapAccurateItemToNSEP(rawName, rawUnit, rawQty) {
+      const item = String(rawName).toUpperCase().trim();
+      const sat = String(rawUnit).toUpperCase().trim();
+      const qty = cleanNumber(rawQty);
+
+      if (qty === 0) return null;
+
+      // Power Brand
+      if (item.includes('15.15.15')) return { id: 'pb_npk15', vol: qty };
+      if (item.includes('CANTIK')) return { id: 'pb_cantik', vol: qty };
+
+      // Strategic Platform
+      if (item.includes('SANTAMIKRO GOLD')) {
+        const factor = item.includes('2,5 GR') || item.includes('2.5 GR') ? 0.0025 : (item.includes('25 GR') ? 0.025 : 1);
+        return { id: 'sp_smgold', vol: qty * factor };
+      }
+      if (item.includes('JAGAIR')) {
+        const factor = item.includes('500GR') || item.includes('500 GR') ? 0.5 : 1;
+        return { id: 'sp_jagaair', vol: qty * factor };
+      }
+      if (item.includes('ASCOFOL')) {
+        const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
+        return { id: 'sp_ascofol', vol: qty * factor };
+      }
+      if (item.includes('K-40') || item.includes('K40')) {
+        const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
+        return { id: 'sp_k40', vol: qty * factor };
+      }
+      if (item.includes('LOUBANG')) {
+        const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
+        return { id: 'sp_loubang', vol: qty * factor };
+      }
+      if (item.includes('(CUAN)') || item.includes('UREA AMONIUM NITRAT')) {
+        const factor = sat === 'PCH' ? 2 : (sat === 'JRC' ? 5 : 1);
+        return { id: 'sp_cuan', vol: qty * factor };
+      }
+      if (item.includes('PERFECT 15.6.20') || item.includes('NITROPHOSKA PERFECT')) return { id: 'sp_perfect', vol: qty };
+      if (item.includes('NPK SPECIAL') || item.includes('NITROPHOSKA SPECIAL')) return { id: 'sp_special', vol: qty };
+      if (item.includes('TRIO KALI') || item.includes('TRIOKALI')) return { id: 'sp_triokali', vol: qty };
+      if (item.includes('UREON') || item.includes('AMMONIUM CHLORIDA')) return { id: 'sp_ureon', vol: qty };
+      if (item.includes('SULPHOS')) return { id: 'sp_sulphos', vol: qty };
+
+      // Core Portfolio
+      if (item.includes('ENTEC-13-10-20') || item.includes('ENTEC 13.10.20')) return { id: 'cp_entec13', vol: qty };
+      if (item.includes('ENTEC 20.10.10') || item.includes('ENTEC-20-10-10')) return { id: 'cp_entec20', vol: qty };
+      if (item.includes('KNOCK')) return { id: 'cp_knock', vol: qty };
+      if (item.startsWith('UREN ') || item.startsWith('UREN@')) return { id: 'cp_uren', vol: qty };
+      if (item.includes('15.0.15') || item.includes('15-0-15')) return { id: 'cp_nk15', vol: qty };
+      if (item.includes('SANTANICALNIT') || item.includes('CALNIT')) return { id: 'cp_calnit', vol: qty };
+      if (item.includes('CANIBOR') || item.includes('CARATE')) return { id: 'cp_carate', vol: qty };
+      if (item.includes('MAGNESIUM NITRATE') || item.includes('MAGNESIUM NITRAT')) return { id: 'cp_mgnitrat', vol: qty };
+      if (item.includes('MAGNESIUM SULFATE') || item.includes('MANZUR')) return { id: 'cp_mgsulfat', vol: qty };
+      if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)')) {
+        const factor = sat === 'DUS' ? 20 : 1;
+        return { id: 'cp_mkp', vol: qty * factor };
+      }
+      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)')) return { id: 'cp_map', vol: qty };
+      if (item.includes('CANKALI')) return { id: 'cp_cankali', vol: qty };
+      if (item.includes('SANTAGROW ZK')) return { id: 'cp_zk', vol: qty };
+      if (item.includes('KNO3 PUTIH')) return { id: 'cp_kno3', vol: qty };
+      if (item.includes('16.16.16')) return { id: 'cp_npk16', vol: qty };
+      if (item.includes('17.17.17')) return { id: 'cp_npk17', vol: qty };
+      if (item.includes('SANTAPHOS')) return { id: 'cp_santaphos', vol: qty };
+      if (item.includes('KCL GRANULAR') || item.includes('SANTAGROW KCL')) return { id: 'cp_kcl', vol: qty };
+      if (item.includes('KUDA SAKTI')) return { id: 'cp_tsp', vol: qty };
+
+      return null;
+    }
+
+    // Ekstraktor fleksibel untuk format Excel (.xls/.xlsx) maupun CSV Accurate
+    function extractTransactionsFromRows(rows) {
+      const transactions = [];
+      let currentStore = null;
+      const categories = new Set(['FUNGISIDA', 'HERBISIDA', 'INSEKTISIDA', 'PUPUK', 'PUPUK CAIR', 'RODENTISIDA', 'ZPT', 'MOLUKUSIDA', 'PESTISIDA', 'PEREKAT', 'BENIH', 'BAKTERISIDA', 'AKARISIDA', 'ALAT PERTANIAN', 'EMULGATOR', 'PLASTIK', 'POMPA', 'SPAREPART']);
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+
+        const nonEmpty = row.map(c => String(c ?? '').trim()).filter(c => c !== '');
+        if (nonEmpty.length === 0) continue;
+
+        // Skip header rows
+        if (nonEmpty[0] === 'Nama Pelanggan' || nonEmpty[0] === 'No. Faktur' || nonEmpty[0].startsWith('Rincian Penjualan') || nonEmpty[0].startsWith('Dari ')) continue;
+
+        // Jika hanya ada 1 kolom terisi -> kemungkinan Nama Pelanggan (ALL CAPS) atau Kategori
+        if (nonEmpty.length === 1) {
+          const val = nonEmpty[0];
+          if (!categories.has(val.toUpperCase()) && isNaN(cleanNumber(val.replace(/\./g, '')))) {
+            currentStore = val;
+          }
+          continue;
+        }
+
+        // Format Excel baru (2025-NOV26 PENJUALAN.xls): Kolom 0 = Nama Pelanggan, Kolom 2 = No. Faktur, Kolom 4 = Tgl Faktur, Kolom 5 = Keterangan Barang, Kolom 6 = Kuantitas, Kolom 7 = Satuan, Kolom 8 = Total Harga, Kolom 9 = Nama Penjual
+        if (row.length >= 8 && String(row[2]).trim() !== '' && String(row[5]).trim() !== '' && parseAccurateDate(row[4])) {
+          const storeName = String(row[0]).trim() || currentStore;
+          const dateObj = parseAccurateDate(row[4]);
+          const itemDesc = String(row[5]).trim();
+          const qty = row[6];
+          const unit = String(row[7]).trim();
+          const totalHarga = cleanNumber(row[8]);
+          const salesName = String(row[9] || '').trim();
+
+          if (storeName && dateObj) {
+            currentStore = storeName;
+            transactions.push({ storeName, dateObj, itemDesc, qty, unit, totalHarga, salesName });
+          }
+          continue;
+        }
+
+        // Format CSV Accurate lama: nonEmpty >= 6 [NoFaktur, TglFaktur, Barang, Qty, Satuan, TotalHarga, Sales]
+        if (nonEmpty.length >= 6 && currentStore) {
+          const dateObj = parseAccurateDate(nonEmpty[1]);
+          if (dateObj) {
+            transactions.push({
+              storeName: currentStore,
+              dateObj,
+              itemDesc: nonEmpty[2],
+              qty: nonEmpty[3],
+              unit: nonEmpty[4],
+              totalHarga: cleanNumber(nonEmpty[5]),
+              salesName: nonEmpty[6] || ''
+            });
+          }
+        }
+      }
+      return transactions;
+    }
+
+    // Agregasi per toko untuk periode Jul-Des 2025 dan Jul-Des 2026
+    function aggregateByStore(transactions) {
+      const storeMap = {};
+      const unmappedSet = new Set();
+
+      transactions.forEach(tx => {
+        const { storeName, dateObj, itemDesc, qty, unit, totalHarga, salesName } = tx;
+        const isJulDec2025 = (dateObj.year === 2025 && dateObj.month >= 7 && dateObj.month <= 12);
+        const isJulDec2026 = (dateObj.year === 2026 && dateObj.month >= 7 && dateObj.month <= 12);
+
+        if (!isJulDec2025 && !isJulDec2026) return;
+
+        if (!storeMap[storeName]) {
+          storeMap[storeName] = {
+            name: storeName,
+            sales: new Set(),
+            products: {} // key: productId -> { vol25, vol26, val26 }
+          };
+        }
+        if (salesName) storeMap[storeName].sales.add(salesName);
+
+        const mapped = mapAccurateItemToNSEP(itemDesc, unit, qty);
+        if (!mapped) {
+          unmappedSet.add(itemDesc);
+          return;
+        }
+
+        if (!storeMap[storeName].products[mapped.id]) {
+          storeMap[storeName].products[mapped.id] = { vol25: 0, vol26: 0, val26: 0 };
+        }
+        if (isJulDec2025) {
+          storeMap[storeName].products[mapped.id].vol25 += mapped.vol;
+        } else if (isJulDec2026) {
+          storeMap[storeName].products[mapped.id].vol26 += mapped.vol;
+          storeMap[storeName].products[mapped.id].val26 += totalHarga;
+        }
+      });
+
+      state.unmappedItems = Array.from(unmappedSet).sort();
+      state.stores = Object.values(storeMap).map(s => ({
+        name: s.name,
+        sales: Array.from(s.sales).join(', ') || '-',
+        products: s.products
+      }));
+
+      // Urutkan toko berdasarkan jumlah merek 2026 terbanyak
+      state.stores.sort((a, b) => {
+        const countA = Object.values(a.products).filter(p => p.vol26 > 0).length;
+        const countB = Object.values(b.products).filter(p => p.vol26 > 0).length;
+        if (countB !== countA) return countB - countA;
+        return a.name.localeCompare(b.name);
+      });
+
+      if (state.stores.length > 0 && (!state.selectedStoreName || !state.stores.some(s => s.name === state.selectedStoreName))) {
+        state.selectedStoreName = state.stores[0].name;
+      }
+
+      document.getElementById('activeDataStats').textContent =
+        `Total ${state.stores.length} Pelanggan Aktif di Periode Jul–Des (2025 & 2026)`;
+    }
+
+    function renderUnmappedAlert() {
+      const box = document.getElementById('unmappedAlertBox');
+      const list = document.getElementById('unmappedList');
+      const countEl = document.getElementById('unmappedCount');
+      if (!state.unmappedItems || state.unmappedItems.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+      countEl.textContent = state.unmappedItems.length;
+      list.innerHTML = state.unmappedItems.map(item =>
+        `<span class="px-2 py-0.5 rounded bg-white border border-amber-300 text-[11px] font-mono text-amber-950">${item}</span>`
+      ).join('');
+      box.classList.remove('hidden');
+    }
+
+    function populateSalesDropdown() {
+      const select = document.getElementById('salesFilterSelect');
+      const salesSet = new Set();
+      state.stores.forEach(s => {
+        s.sales.split(',').forEach(name => {
+          const clean = name.trim();
+          if (clean && clean !== '-') salesSet.add(clean);
+        });
+      });
+      const sortedSales = Array.from(salesSet).sort();
+      select.innerHTML = `<option value="ALL">Semua Sales (${sortedSales.length})</option>` +
+        sortedSales.map(name => `<option value="${escapeQuotes(name)}">${name}</option>`).join('');
+    }
+
+    // =========================================================================
+    // 4. ENGINE PERHITUNGAN & DIAGNOSIS PER TOKO (R-1 & R-2 LENGKAP)
+    // =========================================================================
+    function evaluateStore(store) {
+      const tier = getEffectiveTier(store.name);
+      const items = [];
+      let pbCount = 0, spCount = 0, cpCount = 0, totalBrandCount = 0;
+      let totalBaselineIncentive = 0;
+      let totalGrowthIncentive = 0;
+      let potentialBlindBonus = 0;
+      let strataAchievedBrands = 0;
+      const missingPB = [];
+      const nearMisses = [];
+
+      NSEP_PRODUCTS.forEach(prod => {
+        const rec = store.products[prod.id] || { vol25: 0, vol26: 0, val26: 0 };
+        const vol25 = Math.round(rec.vol25 * 100) / 100;
+        const vol26 = Math.round(rec.vol26 * 100) / 100;
+        const growthVol = vol26 - vol25;
+
+        const isRelevantToTier = (tier === 'R1') || (prod.portfolio !== 'Strategic Platform');
+        const hasPurchased26 = vol26 > 0;
+
+        if (isRelevantToTier && hasPurchased26) {
+          totalBrandCount++;
+          if (prod.portfolio === 'Power Brand') pbCount++;
+          if (prod.portfolio === 'Strategic Platform') spCount++;
+          if (prod.portfolio === 'Core Portfolio') cpCount++;
+        }
+
+        if (prod.portfolio === 'Power Brand' && !hasPurchased26) {
+          missingPB.push(prod.name);
+        }
+
+        let strataLabel = '-';
+        let rate = 0;
+        let baselineRp = 0;
+        let growthRp = 0;
+        let blindRp = 0;
+        let nextTarget = null;
+        let gapToNext = 0;
+
+        if (tier === 'R1') {
+          const r = prod.r1;
+          let achieved = false;
+          if (r.s1 && vol26 >= r.s1[0]) {
+            strataLabel = 'Strata 1';
+            rate = r.s1[2];
+            achieved = true;
+          } else if (r.s2 && vol26 >= r.s2[0]) {
+            strataLabel = 'Strata 2';
+            rate = r.s2[2];
+            achieved = true;
+            if (r.s1) { nextTarget = `Strata 1 (${formatNum(r.s1[0])} ${prod.unit})`; gapToNext = r.s1[0] - vol26; }
+          } else if (r.s3 && vol26 >= r.s3[0]) {
+            strataLabel = 'Strata 3';
+            rate = r.s3[2];
+            achieved = true;
+            if (r.s2) { nextTarget = `Strata 2 (${formatNum(r.s2[0])} ${prod.unit})`; gapToNext = r.s2[0] - vol26; }
+          } else {
+            const lowest = r.s3 || r.s2 || r.s1;
+            const lowestName = r.s3 ? 'Strata 3' : (r.s2 ? 'Strata 2' : 'Strata 1');
+            if (lowest) {
+              nextTarget = `${lowestName} (${formatNum(lowest[0])} ${prod.unit})`;
+              gapToNext = lowest[0] - vol26;
+              if (vol26 > 0) {
+                nearMisses.push({
+                  name: prod.name,
+                  portfolio: prod.portfolio,
+                  vol26,
+                  unit: prod.unit,
+                  targetVol: lowest[0],
+                  gap: gapToNext,
+                  targetLabel: lowestName,
+                  potentialRp: lowest[0] * lowest[2]
+                });
+              }
+            }
+          }
+
+          if (achieved) {
+            strataAchievedBrands++;
+            baselineRp = vol26 * rate;
+            // Growth Incentive R-1: atas pertumbuhan volume positif dibanding Jul-Des 2025 (jika ada baseline 2025)
+            if (vol25 > 0 && growthVol > 0 && r.growth) {
+              growthRp = growthVol * r.growth;
+            }
+            if (r.blind) {
+              blindRp = vol26 * r.blind;
+            }
+          }
+        } else if (tier === 'R2') {
+          if (prod.r2) {
+            if (vol26 >= prod.r2.minVol) {
+              strataLabel = 'Lolos Min.';
+              rate = prod.r2.rate;
+              baselineRp = vol26 * rate;
+              strataAchievedBrands++;
+            } else {
+              nextTarget = `Min. R2 (${formatNum(prod.r2.minVol)} ${prod.unit})`;
+              gapToNext = prod.r2.minVol - vol26;
+              if (vol26 > 0) {
+                nearMisses.push({
+                  name: prod.name,
+                  portfolio: prod.portfolio,
+                  vol26,
+                  unit: prod.unit,
+                  targetVol: prod.r2.minVol,
+                  gap: gapToNext,
+                  targetLabel: 'Min. R-2',
+                  potentialRp: prod.r2.minVol * prod.r2.rate
+                });
+              }
+            }
+          } else if (prod.portfolio === 'Core Portfolio' && vol26 > 0) {
+            strataLabel = 'Portofolio (Non-Rp)';
+          }
+        }
+
+        totalBaselineIncentive += baselineRp;
+        totalGrowthIncentive += growthRp;
+        potentialBlindBonus += blindRp;
+
+        if (isRelevantToTier) {
+          items.push({
+            ...prod,
+            vol25,
+            vol26,
+            growthVol,
+            strataLabel,
+            rate,
+            incentive: baselineRp,
+            growthRp,
+            blindRp,
+            nextTarget,
+            gapToNext
+          });
+        }
+      });
+
+      const blindBonusQualified = (tier === 'R1' && strataAchievedBrands >= 5);
+      const activeBlindBonus = blindBonusQualified ? potentialBlindBonus : 0;
+      const grandTotalIncentive = tier === 'NON' ? 0 : (totalBaselineIncentive + totalGrowthIncentive + activeBlindBonus);
+
+      const req = tier === 'R1'
+        ? { pb: 2, sp: 3, cp: 3, total: 12 }
+        : { pb: 2, sp: 0, cp: 6, total: 8 };
+
+      const pbOk = pbCount >= req.pb;
+      const spOk = spCount >= req.sp;
+      const cpOk = cpCount >= req.cp;
+      const totalOk = totalBrandCount >= req.total;
+      const isQualified = (tier !== 'NON') && pbOk && spOk && cpOk && totalOk;
+
+      let statusCategory = 'QUALIFIED';
+      if (tier === 'NON') statusCategory = 'NON_PROGRAM';
+      else if (!pbOk) statusCategory = 'MISSING_PB';
+      else if (!isQualified) statusCategory = 'MISSING_BRANDS';
+
+      nearMisses.sort((a, b) => (b.vol26 / b.targetVol) - (a.vol26 / a.targetVol));
+
+      return {
+        store,
+        tier,
+        req,
+        pbCount,
+        spCount,
+        cpCount,
+        totalBrandCount,
+        pbOk,
+        spOk,
+        cpOk,
+        totalOk,
+        isQualified,
+        statusCategory,
+        missingPB,
+        nearMisses,
+        totalBaselineIncentive,
+        totalGrowthIncentive,
+        activeBlindBonus,
+        blindBonusQualified,
+        grandTotalIncentive,
+        strataAchievedBrands,
+        items
+      };
+    }
+
+    // =========================================================================
+    // 5. UI RENDERING, BULK MODAL & EXCEL EXPORT
+    // =========================================================================
+    function setDefaultTier(tier) {
+      state.defaultTier = tier;
+      updateDefaultTierButtons();
+      saveStateToStorage();
+      if (state.stores.length > 0) refreshDashboard();
+    }
+
+    function updateDefaultTierButtons() {
+      const btnR1 = document.getElementById('btnTierR1');
+      const btnR2 = document.getElementById('btnTierR2');
+      if (state.defaultTier === 'R1') {
+        btnR1.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-500 text-slate-950 shadow';
+        btnR2.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white';
+      } else {
+        btnR2.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-emerald-500 text-slate-950 shadow';
+        btnR1.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white';
+      }
+    }
+
+    function openBulkTierModal() {
+      document.getElementById('bulkTierModal').classList.remove('hidden');
+    }
+
+    function closeBulkTierModal() {
+      document.getElementById('bulkTierModal').classList.add('hidden');
+    }
+
+    function applyBulkStoreTiers() {
+      const targetTier = document.getElementById('bulkTargetTier').value;
+      const lines = document.getElementById('bulkStoreTextarea').value
+        .split('\n')
+        .map(l => l.trim().toUpperCase())
+        .filter(l => l.length > 0);
+
+      if (lines.length === 0) {
+        showToast('Masukkan minimal 1 nama toko.', 'bg-amber-400');
+        return;
+      }
+
+      let matchedCount = 0;
+      state.stores.forEach(s => {
+        const sUpper = s.name.toUpperCase();
+        if (lines.some(line => sUpper === line || sUpper.includes(line))) {
+          state.storeTiers[s.name] = targetTier;
+          matchedCount++;
+        }
+      });
+
+      saveStateToStorage();
+      closeBulkTierModal();
+      refreshDashboard();
+      showToast(`${matchedCount} toko berhasil di-set ke ${targetTier === 'NON' ? 'Non-Program' : targetTier}!`, 'bg-emerald-400');
+    }
+
+    function resetAllStoreTiers() {
+      state.storeTiers = {};
+      saveStateToStorage();
+      closeBulkTierModal();
+      refreshDashboard();
+      showToast('Semua tag toko dikembalikan ke Default Tier.', 'bg-amber-400');
+    }
+
+    function setStatusFilter(filter) {
+      state.statusFilter = filter;
+      document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.className = 'filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all';
+      });
+      const activeBtn = document.getElementById(`filter_${filter}`);
+      if (activeBtn) {
+        activeBtn.className = 'filter-pill px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-sm transition-all';
+      }
+      renderStoreList();
+    }
+
+    function refreshDashboard() {
+      const evaluatedAll = state.stores.map(s => evaluateStore(s)).filter(e => e.tier !== 'NON');
+
+      const qualifiedCount = evaluatedAll.filter(e => e.isQualified).length;
+      const missingPBCount = evaluatedAll.filter(e => e.statusCategory === 'MISSING_PB').length;
+      const missingBrandsCount = evaluatedAll.filter(e => e.statusCategory === 'MISSING_BRANDS').length;
+      const totalInc = evaluatedAll.filter(e => e.isQualified).reduce((sum, e) => sum + e.grandTotalIncentive, 0);
+
+      document.getElementById('kpiQualified').textContent = qualifiedCount;
+      document.getElementById('kpiMissingPB').textContent = missingPBCount;
+      document.getElementById('kpiMissingBrands').textContent = missingBrandsCount;
+      document.getElementById('kpiTotalIncentive').textContent = formatRp(totalInc);
+
+      renderStoreList();
+      renderStoreDetail();
+    }
+
+    function renderStoreList() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const salesFilter = document.getElementById('salesFilterSelect').value;
+      const container = document.getElementById('storeListContainer');
+
+      const evaluated = state.stores.map(s => evaluateStore(s)).filter(ev => {
+        const matchQuery = !query || ev.store.name.toLowerCase().includes(query) || ev.store.sales.toLowerCase().includes(query);
+        if (!matchQuery) return false;
+
+        if (salesFilter !== 'ALL' && !ev.store.sales.includes(salesFilter)) return false;
+
+        if (state.statusFilter === 'QUALIFIED') return ev.isQualified;
+        if (state.statusFilter === 'MISSING_PB') return ev.statusCategory === 'MISSING_PB';
+        if (state.statusFilter === 'MISSING_BRANDS') return ev.statusCategory === 'MISSING_BRANDS';
+        if (state.statusFilter === 'HAS_INCENTIVE') return ev.grandTotalIncentive > 0;
+        if (state.statusFilter === 'TIER_R1') return ev.tier === 'R1';
+        if (state.statusFilter === 'TIER_R2') return ev.tier === 'R2';
+        return true;
+      });
+
+      document.getElementById('storeCountBadge').textContent = `${evaluated.length} Toko`;
+
+      if (evaluated.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">Tidak ada toko yang sesuai dengan filter pencarian.</div>`;
+        return;
+      }
+
+      container.innerHTML = evaluated.map(ev => {
+        const isSelected = ev.store.name === state.selectedStoreName;
+        const tierPill = ev.tier === 'R1'
+          ? `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-slate-800 text-white">R-1</span>`
+          : (ev.tier === 'R2'
+            ? `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-indigo-600 text-white">R-2</span>`
+            : `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-slate-200 text-slate-600">NON</span>`);
+
+        let badgeHtml = '';
+        if (ev.tier === 'NON') {
+          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-500">DIABAIKAN</span>`;
+        } else if (ev.isQualified) {
+          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">LOLOS SYARAT</span>`;
+        } else if (ev.statusCategory === 'MISSING_PB') {
+          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-rose-100 text-rose-800 border border-rose-200">KURANG PB</span>`;
+        } else {
+          badgeHtml = `<span class="px-2 py-0.5 text-[10px] font-extrabold rounded bg-amber-100 text-amber-800 border border-amber-200">KURANG MEREK</span>`;
+        }
+
+        return `
+          <div onclick="selectStore('${escapeQuotes(ev.store.name)}')" class="p-3.5 cursor-pointer transition-all ${isSelected ? 'bg-emerald-50/80 border-l-4 border-emerald-600' : 'hover:bg-slate-50 border-l-4 border-transparent'}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  ${tierPill}
+                  <p class="text-xs sm:text-sm font-bold text-slate-900 truncate">${ev.store.name}</p>
+                </div>
+                <p class="text-[11px] text-slate-500 truncate mt-0.5">Sales: ${ev.store.sales}</p>
+              </div>
+              <div class="shrink-0">${badgeHtml}</div>
+            </div>
+            <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 text-[11px]">
+              <div class="flex items-center gap-2 font-mono font-semibold text-slate-600">
+                <span class="${ev.pbOk ? 'text-emerald-700' : 'text-rose-600'}">PB:${ev.pbCount}/${ev.req.pb}</span>
+                ${ev.tier === 'R1' ? `<span class="${ev.spOk ? 'text-emerald-700' : 'text-amber-600'}">SP:${ev.spCount}/${ev.req.sp}</span>` : ''}
+                <span class="${ev.cpOk ? 'text-emerald-700' : 'text-amber-600'}">CP:${ev.cpCount}/${ev.req.cp}</span>
+                <span class="${ev.totalOk ? 'text-emerald-700 font-bold' : 'text-slate-700'}">Tot:${ev.totalBrandCount}/${ev.req.total}</span>
+              </div>
+              <span class="font-mono font-bold ${ev.grandTotalIncentive > 0 ? 'text-emerald-700' : 'text-slate-400'}">
+                ${ev.grandTotalIncentive > 0 ? formatRp(ev.grandTotalIncentive) : 'Rp 0'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectStore(storeName) {
+      state.selectedStoreName = storeName;
+      renderStoreList();
+      renderStoreDetail();
+    }
+
+    function renderStoreDetail() {
+      const container = document.getElementById('storeDetailContainer');
+      const store = state.stores.find(s => s.name === state.selectedStoreName);
+      if (!store) {
+        container.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-sm text-slate-500">Pilih toko di daftar sebelah kiri untuk melihat audit lengkap.</div>`;
+        return;
+      }
+
+      const ev = evaluateStore(store);
+      const storeTier = ev.tier;
+
+      // Bangun daftar kekurangan tegas (Actionable Gaps)
+      const missingAlerts = [];
+      if (storeTier === 'NON') {
+        missingAlerts.push(`<strong>NON-PROGRAM:</strong> Toko ini ditandai sebagai pelanggan umum / non-peserta PKS NSEP 2026.`);
+      } else {
+        if (!ev.pbOk) {
+          missingAlerts.push(`<strong>WAJIB POWER BRAND:</strong> Belum ambil <u>${ev.missingPB.join(' & ')}</u>. Tanpa 2 Power Brand ini, insentif tidak dapat dicairkan.`);
+        }
+        if (storeTier === 'R1' && !ev.spOk) {
+          missingAlerts.push(`<strong>KURANG STRATEGIC PLATFORM:</strong> Baru ambil <strong>${ev.spCount} dari min. ${ev.req.sp} merek</strong> (kurang <strong>${ev.req.sp - ev.spCount} merek SP</strong> lagi).`);
+        }
+        if (!ev.cpOk) {
+          missingAlerts.push(`<strong>KURANG CORE PORTFOLIO:</strong> Baru ambil <strong>${ev.cpCount} dari min. ${ev.req.cp} merek</strong> (kurang <strong>${ev.req.cp - ev.cpCount} merek CP</strong> lagi).`);
+        }
+        if (!ev.totalOk) {
+          missingAlerts.push(`<strong>KURANG TOTAL MEREK NSEP:</strong> Total baru <strong>${ev.totalBrandCount} dari min. ${ev.req.total} merek</strong> (kurang <strong>${ev.req.total - ev.totalBrandCount} merek</strong> lagi).`);
+        }
+      }
+
+      const activeItems = ev.items.filter(it => it.vol25 > 0 || it.vol26 > 0);
+      const untouchedItems = ev.items.filter(it => it.vol25 === 0 && it.vol26 === 0);
+
+      container.innerHTML = `
+        <!-- STORE HEADER CARD -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <!-- Individual Store Tier Switcher -->
+                <div class="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-300">
+                  <button onclick="setStoreTier('${escapeQuotes(store.name)}', 'R1')" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md transition-all ${storeTier === 'R1' ? 'bg-slate-900 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">R-1</button>
+                  <button onclick="setStoreTier('${escapeQuotes(store.name)}', 'R2')" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md transition-all ${storeTier === 'R2' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">R-2</button>
+                  <button onclick="setStoreTier('${escapeQuotes(store.name)}', 'NON')" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md transition-all ${storeTier === 'NON' ? 'bg-slate-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">Non-PKS</button>
+                </div>
+
+                ${storeTier === 'NON'
+                  ? `<span class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-md bg-slate-100 text-slate-600 border border-slate-300">PELANGGAN UMUM</span>`
+                  : (ev.isQualified
+                    ? `<span class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">✓ KOMPOSISI MEREK SAH</span>`
+                    : `<span class="px-2.5 py-0.5 text-[11px] font-extrabold uppercase rounded-md bg-rose-100 text-rose-800 border border-rose-300">✕ BELUM MEMENUHI SYARAT PORTOFOLIO</span>`
+                  )
+                }
+              </div>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 mt-2">${store.name}</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Sales Representative: <strong class="text-slate-700">${store.sales}</strong></p>
+            </div>
+
+            <!-- Copy WA Summary Button -->
+            <button onclick="copyWhatsAppReport()" class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold shadow transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+              </svg>
+              <span>Copy Laporan WA</span>
+            </button>
+          </div>
+
+          <!-- PORTFOLIO CHECKLIST BARS -->
+          <div class="grid grid-cols-2 sm:grid-cols-${storeTier === 'R1' ? '4' : '3'} gap-3 mt-5 pt-4 border-t border-slate-100">
+            <div class="p-3 rounded-xl border ${ev.pbOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-rose-50 border-rose-200'}">
+              <p class="text-[11px] font-bold uppercase ${ev.pbOk ? 'text-emerald-800' : 'text-rose-800'}">Power Brand</p>
+              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.pbOk ? 'text-emerald-700' : 'text-rose-600'}">${ev.pbCount} / ${ev.req.pb}</p>
+              <p class="text-[10px] font-semibold mt-0.5 ${ev.pbOk ? 'text-emerald-600' : 'text-rose-600'}">${ev.pbOk ? 'Lengkap' : 'Kurang ' + (ev.req.pb - ev.pbCount) + ' merek'}</p>
+            </div>
+
+            ${storeTier === 'R1' ? `
+            <div class="p-3 rounded-xl border ${ev.spOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50 border-amber-200'}">
+              <p class="text-[11px] font-bold uppercase ${ev.spOk ? 'text-emerald-800' : 'text-amber-800'}">Strategic Plat.</p>
+              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.spOk ? 'text-emerald-700' : 'text-amber-600'}">${ev.spCount} / ${ev.req.sp}</p>
+              <p class="text-[10px] font-semibold mt-0.5 ${ev.spOk ? 'text-emerald-600' : 'text-amber-600'}">${ev.spOk ? 'Memenuhi' : 'Kurang ' + (ev.req.sp - ev.spCount) + ' merek'}</p>
+            </div>` : ''}
+
+            <div class="p-3 rounded-xl border ${ev.cpOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50 border-amber-200'}">
+              <p class="text-[11px] font-bold uppercase ${ev.cpOk ? 'text-emerald-800' : 'text-amber-800'}">Core Portfolio</p>
+              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.cpOk ? 'text-emerald-700' : 'text-amber-600'}">${ev.cpCount} / ${ev.req.cp}</p>
+              <p class="text-[10px] font-semibold mt-0.5 ${ev.cpOk ? 'text-emerald-600' : 'text-amber-600'}">${ev.cpOk ? 'Memenuhi' : 'Kurang ' + (ev.req.cp - ev.cpCount) + ' merek'}</p>
+            </div>
+
+            <div class="p-3 rounded-xl border ${ev.totalOk ? 'bg-emerald-50/70 border-emerald-200' : 'bg-slate-100 border-slate-300'}">
+              <p class="text-[11px] font-bold uppercase text-slate-700">Total Merek</p>
+              <p class="text-xl font-extrabold font-mono mt-0.5 ${ev.totalOk ? 'text-emerald-700' : 'text-slate-900'}">${ev.totalBrandCount} / ${ev.req.total}</p>
+              <p class="text-[10px] font-semibold mt-0.5 ${ev.totalOk ? 'text-emerald-600' : 'text-slate-600'}">${ev.totalOk ? 'Lolos Total' : 'Kurang ' + (ev.req.total - ev.totalBrandCount) + ' merek'}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIONABLE DIAGNOSIS: APA YANG KURANG & GAP KE TARGET -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Kotak 1: Kekurangan Syarat Portofolio -->
+          <div class="rounded-2xl p-4 border ${missingAlerts.length > 0 ? 'bg-rose-50/80 border-rose-200' : 'bg-emerald-50/80 border-emerald-200'}">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider ${missingAlerts.length > 0 ? 'text-rose-800' : 'text-emerald-800'} flex items-center gap-1.5">
+              <span>${missingAlerts.length > 0 ? '⚠️ Kekurangan Syarat Portofolio' : '✅ Status Syarat Portofolio'}</span>
+            </h3>
+            ${missingAlerts.length > 0 ? `
+              <ul class="mt-2.5 space-y-2 text-xs text-rose-900">
+                ${missingAlerts.map(msg => `<li class="flex items-start gap-2"><span class="font-bold text-rose-600">•</span><span>${msg}</span></li>`).join('')}
+              </ul>
+            ` : `
+              <p class="mt-2 text-xs text-emerald-800 leading-relaxed">
+                Komposisi merek toko ini sudah <strong>MEMENUHI SYARAT PKS ${storeTier}</strong>. Fokus berikutnya adalah mendorong volume produk agar menembus strata insentif tertinggi${storeTier === 'R1' ? ' (dan mengejar min. 5 merek capai strata untuk Blind Bonus)' : ''}.
+              </p>
+            `}
+          </div>
+
+          <!-- Kotak 2: Produk Nanggung Target (Near-Miss Volume) -->
+          <div class="rounded-2xl p-4 bg-amber-50/80 border border-amber-200">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-900">
+              🎯 Peluang Kejar Volume (Belum Tembus Target)
+            </h3>
+            ${ev.nearMisses.length > 0 ? `
+              <ul class="mt-2.5 space-y-2 text-xs text-amber-950">
+                ${ev.nearMisses.slice(0, 4).map(nm => `
+                  <li class="bg-white/80 p-2 rounded-lg border border-amber-200/80">
+                    <div class="flex justify-between font-bold">
+                      <span>${nm.name}</span>
+                      <span class="font-mono text-amber-700">${formatNum(nm.vol26)} / ${formatNum(nm.targetVol)} ${nm.unit}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 mt-0.5">
+                      Kurang <strong class="text-rose-600">${formatNum(nm.gap)} ${nm.unit}</strong> lagi untuk tembus <strong>${nm.targetLabel}</strong> (potensi min. ${formatRp(nm.potentialRp)}).
+                    </p>
+                  </li>
+                `).join('')}
+              </ul>
+            ` : `
+              <p class="mt-2 text-xs text-amber-900">
+                Semua produk yang diambil sudah mencapai batas minimum atau belum ada pembelian baru di periode Jul–Des 2026.
+              </p>
+            `}
+          </div>
+        </div>
+
+        <!-- TABEL PERBANDINGAN VOLUME 2025 VS 2026 & ESTIMASI INSENTIF -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-extrabold text-slate-900">Rincian Produk Diambil (Jul–Des 2025 vs 2026)</h3>
+                <p class="text-xs text-slate-500">
+                  Total Estimasi Insentif: <strong class="text-emerald-700 font-mono text-sm">${formatRp(ev.grandTotalIncentive)}</strong>
+                  ${!ev.isQualified && ev.grandTotalIncentive > 0 ? '<span class="text-rose-600 font-bold">(Tertahan syarat merek!)</span>' : ''}
+                </p>
+              </div>
+              ${storeTier === 'R1' ? `<span class="text-[11px] font-bold px-2.5 py-1 rounded-lg ${ev.blindBonusQualified ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-800'}">Blind Bonus: ${ev.strataAchievedBrands} / 5 Merek Strata ${ev.blindBonusQualified ? '(AKTIF!)' : ''}</span>` : ''}
+            </div>
+            ${storeTier === 'R1' && ev.grandTotalIncentive > 0 ? `
+              <div class="flex flex-wrap gap-3 text-[11px] font-mono text-slate-600 pt-1">
+                <span>Baseline: <strong>${formatRp(ev.totalBaselineIncentive)}</strong></span>
+                <span>•</span>
+                <span>Est. Growth: <strong>${formatRp(ev.totalGrowthIncentive)}</strong></span>
+                <span>•</span>
+                <span>Blind Bonus: <strong>${formatRp(ev.activeBlindBonus)}</strong></span>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-[11px] font-extrabold uppercase text-slate-600 border-b border-slate-200">
+                  <th class="py-2.5 px-3">Portofolio</th>
+                  <th class="py-2.5 px-3">Merek NSEP</th>
+                  <th class="py-2.5 px-3 text-right">Jul–Des 25</th>
+                  <th class="py-2.5 px-3 text-right">Jul–Des 26</th>
+                  <th class="py-2.5 px-3 text-right">Growth</th>
+                  <th class="py-2.5 px-3">Status / Kekurangan</th>
+                  <th class="py-2.5 px-3 text-right">Est. Insentif</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${activeItems.length === 0 ? `
+                  <tr><td colspan="7" class="py-6 text-center text-slate-500">Belum ada transaksi produk NSEP pada periode Jul–Des 2025 maupun 2026.</td></tr>
+                ` : activeItems.map(it => {
+                  const portBadge = it.portfolio === 'Power Brand'
+                    ? 'bg-rose-100 text-rose-800'
+                    : (it.portfolio === 'Strategic Platform' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800');
+                  const growthColor = it.growthVol > 0 ? 'text-emerald-600' : (it.growthVol < 0 ? 'text-rose-600' : 'text-slate-400');
+                  const rowTotalRp = it.incentive + it.growthRp + (ev.blindBonusQualified ? it.blindRp : 0);
+                  return `
+                    <tr class="hover:bg-slate-50/80">
+                      <td class="py-2.5 px-3 whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${portBadge}">${it.portfolio === 'Power Brand' ? 'PB' : (it.portfolio === 'Strategic Platform' ? 'SP' : 'CP')}</span>
+                      </td>
+                      <td class="py-2.5 px-3 font-bold text-slate-900">${it.name}</td>
+                      <td class="py-2.5 px-3 text-right font-mono text-slate-500">${formatNum(it.vol25)} ${it.unit}</td>
+                      <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">${formatNum(it.vol26)} ${it.unit}</td>
+                      <td class="py-2.5 px-3 text-right font-mono font-semibold ${growthColor}">${it.growthVol > 0 ? '+' : ''}${formatNum(it.growthVol)}</td>
+                      <td class="py-2.5 px-3">
+                        ${it.incentive > 0
+                          ? `<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">${it.strataLabel} (@Rp${formatNum(it.rate)})</span>`
+                          : (it.nextTarget ? `<span class="text-[11px] text-amber-700 font-medium">Kurang ${formatNum(it.gapToNext)} ${it.unit} ke ${it.nextTarget.split(' ')[0]}</span>` : `<span class="text-[11px] text-slate-400">-</span>`)
+                        }
+                      </td>
+                      <td class="py-2.5 px-3 text-right font-mono font-bold ${rowTotalRp > 0 ? 'text-emerald-700' : 'text-slate-400'}">
+                        ${rowTotalRp > 0 ? formatRp(rowTotalRp) : '-'}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Rekomendasi Merek yang Belum Pernah Diambil -->
+          <div class="p-4 bg-slate-50 border-t border-slate-200">
+            <p class="text-xs font-bold text-slate-700 mb-2">Merek NSEP ${storeTier} yang Belum Diambil Toko Ini (${untouchedItems.length} merek):</p>
+            <div class="flex flex-wrap gap-1.5">
+              ${untouchedItems.map(u => {
+                const isPB = u.portfolio === 'Power Brand';
+                return `<span class="px-2 py-1 rounded-lg text-[11px] font-medium border ${isPB ? 'bg-rose-100 text-rose-900 border-rose-300 font-bold' : 'bg-white text-slate-600 border-slate-200'}">${u.name} (${u.portfolio === 'Power Brand' ? 'PB WAJIB' : (u.portfolio === 'Strategic Platform' ? 'SP' : 'CP')})</span>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 6. COPY WHATSAPP REPORT & EXPORT EXCEL REKAP
+    // =========================================================================
+    function copyWhatsAppReport() {
+      const store = state.stores.find(s => s.name === state.selectedStoreName);
+      if (!store) return;
+      const ev = evaluateStore(store);
+
+      let lines = [];
+      lines.push(`*UPDATE EVALUASI NSEP 2026 (${ev.tier})*`);
+      lines.push(`Toko: *${store.name}*`);
+      lines.push(`Sales: ${store.sales}`);
+      lines.push(`Status Portofolio: *${ev.isQualified ? 'LOLOS SYARAT' : 'BELUM MEMENUHI SYARAT'}*`);
+      lines.push(``);
+      lines.push(`*Komposisi Merek (Jul–Des 2026):*`);
+      lines.push(`- Power Brand: ${ev.pbCount}/${ev.req.pb} merek ${ev.pbOk ? '(OK)' : '(KURANG)'}`);
+      if (ev.tier === 'R1') {
+        lines.push(`- Strategic Platform: ${ev.spCount}/${ev.req.sp} merek ${ev.spOk ? '(OK)' : '(KURANG)'}`);
+      }
+      lines.push(`- Core Portfolio: ${ev.cpCount}/${ev.req.cp} merek ${ev.cpOk ? '(OK)' : '(KURANG)'}`);
+      lines.push(`- Total Merek NSEP: ${ev.totalBrandCount}/${ev.req.total} merek`);
+
+      if (!ev.isQualified && ev.tier !== 'NON') {
+        lines.push(``);
+        lines.push(`*Kekurangan Syarat Merek:*`);
+        if (!ev.pbOk) lines.push(`! Wajib tambah Power Brand: ${ev.missingPB.join(' & ')}`);
+        if (ev.tier === 'R1' && !ev.spOk) lines.push(`! Tambah min. ${ev.req.sp - ev.spCount} merek Strategic Platform`);
+        if (!ev.cpOk) lines.push(`! Tambah min. ${ev.req.cp - ev.cpCount} merek Core Portfolio`);
+        if (!ev.totalOk) lines.push(`! Tambah min. ${ev.req.total - ev.totalBrandCount} merek lagi agar genap ${ev.req.total} merek`);
+      }
+
+      if (ev.nearMisses.length > 0) {
+        lines.push(``);
+        lines.push(`*Peluang Kejar Target Volume:*`);
+        ev.nearMisses.slice(0, 4).forEach(nm => {
+          lines.push(`- ${nm.name}: ${formatNum(nm.vol26)} ${nm.unit} (kurang ${formatNum(nm.gap)} ${nm.unit} ke ${nm.targetLabel})`);
+        });
+      }
+
+      lines.push(``);
+      lines.push(`Est. Total Insentif Berjalan: *${formatRp(ev.grandTotalIncentive)}*`);
+
+      const text = lines.join('\n');
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+
+      showToast('Laporan WhatsApp berhasil disalin ke clipboard!', 'bg-emerald-400');
+    }
+
+    function exportToExcel() {
+      if (!state.stores || state.stores.length === 0) return;
+
+      const summaryRows = [];
+      const detailRows = [];
+
+      state.stores.forEach(s => {
+        const ev = evaluateStore(s);
+        const gaps = [];
+        if (ev.tier !== 'NON') {
+          if (!ev.pbOk) gaps.push(`Kurang PB (${ev.missingPB.join(' & ')})`);
+          if (ev.tier === 'R1' && !ev.spOk) gaps.push(`Kurang ${ev.req.sp - ev.spCount} SP`);
+          if (!ev.cpOk) gaps.push(`Kurang ${ev.req.cp - ev.cpCount} CP`);
+          if (!ev.totalOk) gaps.push(`Kurang ${ev.req.total - ev.totalBrandCount} Total Merek`);
+        }
+
+        summaryRows.push({
+          'Nama Toko': s.name,
+          'Sales': s.sales,
+          'Skema': ev.tier,
+          'Status Kelayakan': ev.tier === 'NON' ? 'Non-Program' : (ev.isQualified ? 'LOLOS SYARAT' : 'BELUM MEMENUHI'),
+          'Power Brand': `${ev.pbCount}/${ev.req.pb}`,
+          'Strategic Platform': ev.tier === 'R1' ? `${ev.spCount}/${ev.req.sp}` : '-',
+          'Core Portfolio': `${ev.cpCount}/${ev.req.cp}`,
+          'Total Merek': `${ev.totalBrandCount}/${ev.req.total}`,
+          'Merek Capai Strata': ev.strataAchievedBrands,
+          'Catatan Kekurangan Syarat': gaps.join('; ') || 'Lengkap',
+          'Est. Baseline (Rp)': Math.round(ev.totalBaselineIncentive),
+          'Est. Growth (Rp)': Math.round(ev.totalGrowthIncentive),
+          'Est. Blind Bonus (Rp)': Math.round(ev.activeBlindBonus),
+          'Est. Total Insentif (Rp)': Math.round(ev.grandTotalIncentive)
+        });
+
+        ev.items.forEach(it => {
+          if (it.vol25 > 0 || it.vol26 > 0) {
+            detailRows.push({
+              'Nama Toko': s.name,
+              'Sales': s.sales,
+              'Skema': ev.tier,
+              'Portofolio': it.portfolio,
+              'Merek NSEP': it.name,
+              'Satuan': it.unit,
+              'Vol Jul-Des 2025': it.vol25,
+              'Vol Jul-Des 2026': it.vol26,
+              'Growth Vol': it.growthVol,
+              'Status Strata': it.strataLabel,
+              'Gap ke Target Berikutnya': it.gapToNext > 0 ? it.gapToNext : 0,
+              'Est. Baseline (Rp)': Math.round(it.incentive),
+              'Est. Growth (Rp)': Math.round(it.growthRp),
+              'Est. Blind Bonus (Rp)': ev.blindBonusQualified ? Math.round(it.blindRp) : 0
+            });
+          }
+        });
+      });
+
+      const wb = XLSX.utils.book_new();
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+      const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Rekap Kelayakan Toko');
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'Rincian Produk 2025 vs 2026');
+
+      const dateTag = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Rekap_Audit_NSEP_2026_${dateTag}.xlsx`);
+      showToast('File Excel Rekap berhasil di-download!', 'bg-emerald-400');
+    }
+
+    // =========================================================================
+    // 7. HELPER FORMATTING & TOAST
+    // =========================================================================
+    function formatNum(num) {
+      if (num === null || num === undefined) return '0';
+      return Number(num).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    }
+
+    function formatRp(num) {
+      return 'Rp ' + Math.round(num || 0).toLocaleString('id-ID');
+    }
+
+    function escapeQuotes(str) {
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    let toastTimeout = null;
+    function showToast(msg, dotColorClass = 'bg-emerald-400') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').className = `w-2.5 h-2.5 rounded-full ${dotColorClass}`;
+      toast.classList.remove('hidden');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.add('hidden'), 3200);
+    }
+  </script>
+</body>
+</html>
