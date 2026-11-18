@@ -800,16 +800,23 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const lastDot = s.lastIndexOf('.');
       const lastComma = s.lastIndexOf(',');
       if (lastComma > lastDot) {
-        s = s.replace(/\./g, '').replace(',', '.');
-      } else if (lastDot > lastComma && lastComma !== -1) {
-        s = s.replace(/,/g, '');
-      } else if (lastComma !== -1 && lastDot === -1) {
-        const parts = s.split(',');
-        if (parts[parts.length - 1].length === 3) s = s.replace(/,/g, '');
-        else s = s.replace(',', '.');
-      } else if (lastDot !== -1 && lastComma === -1) {
-        const parts = s.split('.');
-        if (parts[parts.length - 1].length === 3 && parts.length > 1) s = s.replace(/\./g, '');
+        // Format Indonesia: 15.000,00 atau 15.000,5
+        const decPart = s.slice(lastComma + 1);
+        if (decPart.length === 3 && lastDot === -1) {
+          // Contoh: "15,000" -> ribuan 15000
+          s = s.replace(/,/g, '');
+        } else {
+          s = s.replace(/\./g, '').replace(',', '.');
+        }
+      } else if (lastDot > lastComma) {
+        // Format US: 15,000.00 atau format ribuan titik: 15.000
+        const decPart = s.slice(lastDot + 1);
+        if (decPart.length === 3 && lastComma === -1) {
+          // Contoh: "15.000" atau "1.500.000" -> ribuan 15000 / 1500000
+          s = s.replace(/\./g, '');
+        } else {
+          s = s.replace(/,/g, '');
+        }
       }
       const n = parseFloat(s);
       return isFinite(n) ? n : 0;
@@ -883,68 +890,72 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const sat = String(rawSatuan || '').toUpperCase().trim();
       // Samakan tanda '-' dan '.' serta spasi berlebih agar '15-15-15' == '15.15.15', 'K-40' == 'K40', dll.
       const item = rawUp.replace(/-/g, '.').replace(/\s+/g, ' ');
+      // Konversi otomatis jika satuan di file menggunakan TON / MT
+      const baseQty = (sat === 'TON' || sat === 'MT') ? qty * 1000 : qty;
 
       // POWER BRAND
-      if (item.includes('15.15.15')) return { brandId: 'PB_151515', volKgLtr: qty };
-      if (item.includes('CANTIK')) return { brandId: 'PB_CANTIK', volKgLtr: qty };
+      if (item.includes('15.15.15')) return { brandId: 'PB_151515', volKgLtr: baseQty };
+      if (item.includes('CANTIK')) return { brandId: 'PB_CANTIK', volKgLtr: baseQty };
 
       // STRATEGIC PLATFORM (Cek UREON secara ketat sebelum UREN agar tidak tertukar)
-      if (/\bUREON\b/.test(item) || item.includes('AMMONIUM CHLORIDA')) return { brandId: 'SP_UREON', volKgLtr: qty };
+      if (/\bUREON\b/.test(item) || item.includes('AMMONIUM CHLORIDA')) return { brandId: 'SP_UREON', volKgLtr: baseQty };
       if (item.includes('SANTAMIKRO GOLD') || item.includes('SANTAMICRO GOLD')) {
         const factor = (item.includes('2,5 GR') || item.includes('2.5 GR')) ? 0.0025 : (item.includes('25 GR') ? 0.025 : 1);
-        return { brandId: 'SP_SMGOLD', volKgLtr: sat === 'KG' ? qty : qty * factor };
+        return { brandId: 'SP_SMGOLD', volKgLtr: sat === 'KG' ? baseQty : baseQty * factor };
       }
       if (item.includes('JAGAIR') || item.includes('JAGAAIR') || item.includes('JAGA AIR')) {
         const factor = item.includes('500') ? 0.5 : 1;
-        return { brandId: 'SP_JAGAAIR', volKgLtr: sat === 'KG' ? qty : qty * factor };
+        return { brandId: 'SP_JAGAAIR', volKgLtr: sat === 'KG' ? baseQty : baseQty * factor };
       }
       if (item.includes('ASCOFOL')) {
         const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
-        return { brandId: 'SP_ASCOFOL', volKgLtr: sat === 'LTR' ? qty : qty * factor };
+        return { brandId: 'SP_ASCOFOL', volKgLtr: sat === 'LTR' ? baseQty : baseQty * factor };
       }
       if (item.includes('K.40') || item.includes('K40')) {
         const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
-        return { brandId: 'SP_K40', volKgLtr: sat === 'LTR' ? qty : qty * factor };
+        return { brandId: 'SP_K40', volKgLtr: sat === 'LTR' ? baseQty : baseQty * factor };
       }
       if (item.includes('LOUBANG')) {
         const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
-        return { brandId: 'SP_LOUBANG', volKgLtr: sat === 'LTR' ? qty : qty * factor };
+        return { brandId: 'SP_LOUBANG', volKgLtr: sat === 'LTR' ? baseQty : baseQty * factor };
       }
       if (item.includes('(CUAN)') || item.includes('UREA AMONIUM NITRAT') || /\bCUAN\b/.test(item)) {
         const factor = sat === 'PCH' ? 2 : (sat === 'JRC' || sat === 'JRG' ? 5 : 1);
-        return { brandId: 'SP_CUAN', volKgLtr: qty * factor };
+        return { brandId: 'SP_CUAN', volKgLtr: baseQty * factor };
       }
-      if (item.includes('PERFECT')) return { brandId: 'SP_PERFECT', volKgLtr: qty };
-      if (item.includes('NPK SPECIAL') || item.includes('NITROPHOSKA SPECIAL')) return { brandId: 'SP_SPECIAL', volKgLtr: qty };
-      if (item.includes('TRIO KALI') || item.includes('TRIOKALI')) return { brandId: 'SP_TRIOKALI', volKgLtr: qty };
-      if (item.includes('SULPHOS')) return { brandId: 'SP_SULPHOS', volKgLtr: qty };
+      if (item.includes('PERFECT')) return { brandId: 'SP_PERFECT', volKgLtr: baseQty };
+      if (item.includes('NPK SPECIAL') || item.includes('NITROPHOSKA SPECIAL')) return { brandId: 'SP_SPECIAL', volKgLtr: baseQty };
+      if (item.includes('TRIO KALI') || item.includes('TRIOKALI')) return { brandId: 'SP_TRIOKALI', volKgLtr: baseQty };
+      if (item.includes('SULPHOS')) return { brandId: 'SP_SULPHOS', volKgLtr: baseQty };
 
       // CORE PORTFOLIO
-      if (item.includes('ENTEC.13.10.20') || item.includes('ENTEC 13.10.20')) return { brandId: 'CP_ENTEC13', volKgLtr: qty };
-      if (item.includes('ENTEC.20.10.10') || item.includes('ENTEC 20.10.10')) return { brandId: 'CP_ENTEC20', volKgLtr: qty };
-      if (item.includes('KNOCK')) return { brandId: 'CP_KNOCK', volKgLtr: qty };
-      if (/\bUREN\b/.test(item) || item.startsWith('UREN@')) return { brandId: 'CP_UREN', volKgLtr: qty };
-      if (item.includes('15.0.15')) return { brandId: 'CP_SGNK', volKgLtr: qty };
-      if (item.includes('SANTANICALNIT') || item.includes('CALNIT')) return { brandId: 'CP_CALNIT', volKgLtr: qty };
-      if (item.includes('CANIBOR') || item.includes('CARATE')) return { brandId: 'CP_CARATE', volKgLtr: qty };
-      if (item.includes('MAGNESIUM NITRATE') || item.includes('MAGNESIUM NITRAT')) return { brandId: 'CP_MGNITRAT', volKgLtr: qty };
-      if (item.includes('MAGNESIUM SULFATE') || item.includes('MAGNESIUM SULFAT') || item.includes('MANZUR')) return { brandId: 'CP_MGSULFAT', volKgLtr: qty };
+      if (item.includes('ENTEC.13.10.20') || item.includes('ENTEC 13.10.20')) return { brandId: 'CP_ENTEC13', volKgLtr: baseQty };
+      if (item.includes('ENTEC.20.10.10') || item.includes('ENTEC 20.10.10')) return { brandId: 'CP_ENTEC20', volKgLtr: baseQty };
+      if (item.includes('KNOCK')) return { brandId: 'CP_KNOCK', volKgLtr: baseQty };
+      if (/\bUREN\b/.test(item) || item.startsWith('UREN@')) return { brandId: 'CP_UREN', volKgLtr: baseQty };
+      if (item.includes('15.0.15')) return { brandId: 'CP_SGNK', volKgLtr: baseQty };
+      if (item.includes('SANTANICALNIT') || item.includes('CALNIT')) return { brandId: 'CP_CALNIT', volKgLtr: baseQty };
+      if (item.includes('CANIBOR') || item.includes('CARATE')) return { brandId: 'CP_CARATE', volKgLtr: baseQty };
+      if (item.includes('MAGNESIUM NITRATE') || item.includes('MAGNESIUM NITRAT')) return { brandId: 'CP_MGNITRAT', volKgLtr: baseQty };
+      if (item.includes('MAGNESIUM SULFATE') || item.includes('MAGNESIUM SULFAT') || item.includes('MANZUR')) return { brandId: 'CP_MGSULFAT', volKgLtr: baseQty };
       if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)') || /\bMKP\b/.test(item)) {
         const factor = sat === 'DUS' ? 20 : 1;
-        return { brandId: 'CP_MKP', volKgLtr: qty * factor };
+        return { brandId: 'CP_MKP', volKgLtr: baseQty * factor };
       }
-      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || /\bMAP\b/.test(item)) return { brandId: 'CP_MAP', volKgLtr: qty };
-      if (item.includes('CANKALI')) return { brandId: 'CP_CANKALI', volKgLtr: qty };
-      if (item.includes('SANTAGROW ZK') || item.includes('S.GROW ZK') || /\bZK\b/.test(item)) return { brandId: 'CP_SGZK', volKgLtr: qty };
-      if (item.includes('KNO3') || item.includes('S.GROW NOP') || item.includes('SANTAGROW NOP') || /\bNOP\b/.test(item)) return { brandId: 'CP_KNO3', volKgLtr: qty };
-      if (item.includes('16.16.16')) return { brandId: 'CP_161616', volKgLtr: qty };
-      if (item.includes('17.17.17')) return { brandId: 'CP_171717', volKgLtr: qty };
-      if (item.includes('SANTAPHOS')) return { brandId: 'CP_SANTAPHOS', volKgLtr: qty };
-      if (item.includes('15.10.20')) return { brandId: 'CP_151020', volKgLtr: qty };
-      if (item.includes('KCL') || /\bMOP\b/.test(item)) return { brandId: 'CP_KCL', volKgLtr: qty };
-      if (item.includes('KUDA SAKTI') || /\bTSP\b/.test(item)) return { brandId: 'CP_TSP', volKgLtr: qty };
+      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || /\bMAP\b/.test(item)) return { brandId: 'CP_MAP', volKgLtr: baseQty };
+      if (item.includes('CANKALI')) return { brandId: 'CP_CANKALI', volKgLtr: baseQty };
+      if (item.includes('SANTAGROW ZK') || item.includes('S.GROW ZK') || /\bZK\b/.test(item)) return { brandId: 'CP_SGZK', volKgLtr: baseQty };
+      if (item.includes('KNO3') || item.includes('S.GROW NOP') || item.includes('SANTAGROW NOP') || /\bNOP\b/.test(item)) return { brandId: 'CP_KNO3', volKgLtr: baseQty };
+      if (item.includes('16.16.16')) return { brandId: 'CP_161616', volKgLtr: baseQty };
+      if (item.includes('17.17.17')) return { brandId: 'CP_171717', volKgLtr: baseQty };
+      if (item.includes('SANTAPHOS')) return { brandId: 'CP_SANTAPHOS', volKgLtr: baseQty };
+      if (item.includes('15.10.20')) return { brandId: 'CP_151020', volKgLtr: baseQty };
+      if (item.includes('KCL') || /\bMOP\b/.test(item)) return { brandId: 'CP_KCL', volKgLtr: baseQty };
+      if (item.includes('TSP') || item.includes('SP36') || item.includes('SP 36') || item.includes('SP-36') || item.includes('KUDA SAKTI')) {
+        return { brandId: 'CP_TSP', volKgLtr: baseQty };
+      }
 
-      return { brandId: null, volKgLtr: qty };
+      return { brandId: null, volKgLtr: baseQty };
     }
 
     function parseAccurateRows(rows, fileName) {
@@ -961,7 +972,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         'UNIT 1BARANG', 'NAMA PELANGGAN', 'TOTAL', 'GRAND TOTAL'
       ]);
 
-      const validUnits = new Set(['KG', 'LTR', 'BKS', 'BTL', 'DUS', 'PCH', 'JRC', 'JRG', 'PCS', 'SAK', 'ZAK']);
+      const validUnits = new Set(['KG', 'LTR', 'BKS', 'BTL', 'DUS', 'PCH', 'JRC', 'JRG', 'PCS', 'SAK', 'ZAK', 'TON', 'MT']);
       let colMap = { channel: -1, beneficiary: -1, line: -1 };
 
       for (let rIdx = 0; rIdx < rows.length; rIdx++) {
