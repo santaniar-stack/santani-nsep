@@ -275,7 +275,7 @@
            =================================================================== -->
       <section id="dashboardSection" class="hidden space-y-5">
 
-        <!-- KPI Summary Cards (Horizontal swipeable on Mobile, 5-grid on Desktop) -->
+        <!-- KPI Summary Cards -->
         <div class="flex lg:grid lg:grid-cols-5 gap-3 overflow-x-auto no-scrollbar pb-1">
           <div onclick="setStatusFilter('ELIGIBLE')" class="min-w-[165px] lg:min-w-0 btn-motion cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-emerald-500 rounded-2xl p-3.5 sm:p-4 border border-stone-200 dark:border-slate-800 shadow-2xs shrink-0">
             <div class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">✅ Lolos Syarat</div>
@@ -390,7 +390,7 @@
     </main>
   </div>
 
-  <!-- Mobile Bottom Navigation Bar (Khusus HP / Layar Kecil) -->
+  <!-- Mobile Bottom Navigation Bar -->
   <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-stone-200 dark:border-slate-800 px-3 py-2 flex items-center justify-around shadow-lg">
     <button id="mobNavResults" onclick="switchWorkspaceTab('RESULTS')" class="btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-red-600 font-extrabold text-[11px]">
       <span class="text-base">📊</span>
@@ -456,6 +456,29 @@
 
   <!-- Toast Notification -->
   <div id="toastNotification" class="hidden fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 px-4 py-3 rounded-2xl text-slate-950 font-extrabold text-xs sm:text-sm shadow-2xl transition-all"></div>
+
+  <!-- Product Transaction History Modal (Dipisah 2026 & 2025) -->
+  <div id="productHistoryModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-stone-200 dark:border-slate-700 animate-panel-enter space-y-4">
+      <div class="flex items-center justify-between border-b border-stone-200 dark:border-slate-800 pb-3">
+        <div>
+          <span id="modalProductPortfolio" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400"></span>
+          <h3 id="modalProductName" class="text-base sm:text-lg font-black text-slate-900 dark:text-white"></h3>
+        </div>
+        <button onclick="closeProductHistoryModal()" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-lg flex items-center justify-center">&times;</button>
+      </div>
+
+      <div class="text-xs font-semibold text-slate-600 dark:text-slate-300" id="modalStoreContext"></div>
+
+      <div class="max-h-[58vh] overflow-y-auto custom-scrollbar space-y-4 pr-1" id="modalTransactionListContainer">
+        <!-- Separated 2026 & 2025 sections injected here -->
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-stone-200 dark:border-slate-800">
+        <button onclick="closeProductHistoryModal()" class="btn-motion px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-extrabold text-white shadow">Tutup</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // =========================================================================
@@ -800,19 +823,15 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const lastDot = s.lastIndexOf('.');
       const lastComma = s.lastIndexOf(',');
       if (lastComma > lastDot) {
-        // Format Indonesia: 15.000,00 atau 15.000,5
         const decPart = s.slice(lastComma + 1);
         if (decPart.length === 3 && lastDot === -1) {
-          // Contoh: "15,000" -> ribuan 15000
           s = s.replace(/,/g, '');
         } else {
           s = s.replace(/\./g, '').replace(',', '.');
         }
       } else if (lastDot > lastComma) {
-        // Format US: 15,000.00 atau format ribuan titik: 15.000
         const decPart = s.slice(lastDot + 1);
         if (decPart.length === 3 && lastComma === -1) {
-          // Contoh: "15.000" atau "1.500.000" -> ribuan 15000 / 1500000
           s = s.replace(/\./g, '');
         } else {
           s = s.replace(/,/g, '');
@@ -888,16 +907,14 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     function mapAccurateItemToNSEP(rawItem, rawSatuan, qty) {
       const rawUp = String(rawItem || '').toUpperCase().trim();
       const sat = String(rawSatuan || '').toUpperCase().trim();
-      // Samakan tanda '-' dan '.' serta spasi berlebih agar '15-15-15' == '15.15.15', 'K-40' == 'K40', dll.
       const item = rawUp.replace(/-/g, '.').replace(/\s+/g, ' ');
-      // Konversi otomatis jika satuan di file menggunakan TON / MT
       const baseQty = (sat === 'TON' || sat === 'MT') ? qty * 1000 : qty;
 
       // POWER BRAND
       if (item.includes('15.15.15')) return { brandId: 'PB_151515', volKgLtr: baseQty };
       if (item.includes('CANTIK')) return { brandId: 'PB_CANTIK', volKgLtr: baseQty };
 
-      // STRATEGIC PLATFORM (Cek UREON secara ketat sebelum UREN agar tidak tertukar)
+      // STRATEGIC PLATFORM
       if (/\bUREON\b/.test(item) || item.includes('AMMONIUM CHLORIDA')) return { brandId: 'SP_UREON', volKgLtr: baseQty };
       if (item.includes('SANTAMIKRO GOLD') || item.includes('SANTAMICRO GOLD')) {
         const factor = (item.includes('2,5 GR') || item.includes('2.5 GR')) ? 0.0025 : (item.includes('25 GR') ? 0.025 : 1);
@@ -1899,7 +1916,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             </div>
           </div>` : ''}
 
-          <!-- Diagnosis Box: Kurang Syarat & Nanggung Target (dengan Bulan & Tahun) -->
+          <!-- Diagnosis Box -->
           ${(missingAlerts.length > 0 || ev.nearMisses.length > 0) ? `
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div class="bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-2xl p-4 space-y-2">
@@ -1934,9 +1951,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             <div><span class="text-amber-400 block">Total Sah</span><b class="text-base text-amber-300">${formatRupiah(ev.finalIncentiveRp)}</b></div>
           </div>` : ''}
 
-          <!-- MOBILE CARD VIEW (< 640px): Nyaman dibaca Bapak & Ibu di HP tanpa geser tabel -->
+          <!-- MOBILE CARD VIEW (< 640px) -->
           <div class="sm:hidden space-y-2.5">
-            <div class="text-xs font-black uppercase tracking-wider text-slate-400 px-1">Rincian Produk & Bulan Ambil</div>
+            <div class="text-xs font-black uppercase tracking-wider text-slate-400 px-1">Rincian Produk & Bulan Ambil (Klik Nama Barang)</div>
             ${activeRows.map(r => {
               const statusBadge = r.achievedStrata
                 ? `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">✅ ${r.strataLabel}</span>`
@@ -1949,7 +1966,10 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
                   <div class="flex items-start justify-between gap-2">
                     <div>
                       <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${r.portfolio}</span>
-                      <div class="font-black text-sm text-slate-900 dark:text-white">${escapeHtml(r.name)}</div>
+                      <button onclick="openProductHistoryModal('${escapeAttr(store.name)}', '${r.id}')" class="font-black text-sm text-left text-red-600 dark:text-red-400 hover:underline flex items-center gap-1">
+                        <span>${escapeHtml(r.name)}</span>
+                        <span class="text-[10px]">🔍</span>
+                      </button>
                     </div>
                     ${statusBadge}
                   </div>
@@ -1978,7 +1998,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
               <thead>
                 <tr class="bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-b border-stone-200 dark:border-slate-700">
                   <th class="py-3 px-3.5 font-extrabold">Portofolio</th>
-                  <th class="py-3 px-3.5 font-extrabold">Merek Produk NSEP</th>
+                  <th class="py-3 px-3.5 font-extrabold">Merek Produk NSEP (Klik untuk Detail Faktur & Bulan)</th>
                   <th class="py-3 px-3.5 font-extrabold text-right">${periodLabel} 2025</th>
                   <th class="py-3 px-3.5 font-extrabold text-right">${periodLabel} 2026 & Bulan Ambil</th>
                   <th class="py-3 px-3.5 font-extrabold text-center">Status Target</th>
@@ -1994,9 +2014,14 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
                       : `<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300">❌ Wajib Ambil</span>`);
 
                   return `
-                    <tr class="hover:bg-stone-50 dark:hover:bg-slate-800/40">
+                    <tr class="hover:bg-stone-50 dark:hover:bg-slate-800/45 transition-colors">
                       <td class="py-3 px-3.5 text-xs font-bold text-slate-500 dark:text-slate-400">${r.portfolio}</td>
-                      <td class="py-3 px-3.5 font-extrabold text-slate-900 dark:text-white">${escapeHtml(r.name)}</td>
+                      <td class="py-3 px-3.5">
+                        <button onclick="openProductHistoryModal('${escapeAttr(store.name)}', '${r.id}')" class="font-extrabold text-slate-900 dark:text-white hover:text-red-600 dark:hover:text-red-400 text-left flex items-center gap-1.5 group">
+                          <span class="group-hover:underline">${escapeHtml(r.name)}</span>
+                          <span class="text-[10px] text-red-600 dark:text-red-400 opacity-70 group-hover:opacity-100">🔍 Rinci</span>
+                        </button>
+                      </td>
                       <td class="py-3 px-3.5 text-right font-mono text-slate-600 dark:text-slate-300">
                         <div>${formatNum(r.vol25)} ${r.unit}</div>
                         ${r.dates25Label ? `<div class="font-sans text-[11px] text-slate-400">📅 ${escapeHtml(r.dates25Label)}</div>` : ''}
@@ -2016,6 +2041,78 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           </div>
         </div>
       `;
+    }
+
+    function renderYearGroupBox(title, badgeText, badgeClass, txs, unit) {
+      const totalVol = txs.reduce((acc, t) => acc + t.volKgLtr, 0);
+      const listHtml = txs.length === 0
+        ? `<div class="p-4 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">Tidak ada pengambilan di tahun ini.</div>`
+        : txs.map(tx => `
+            <div class="p-3 sm:p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-stone-50/70 dark:hover:bg-slate-800/40 transition-colors">
+              <div class="min-w-0">
+                <div class="font-black text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <span>📅 ${MONTH_NAMES[tx.month]} ${tx.year}</span>
+                  <span class="px-2 py-0.5 rounded bg-stone-100 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    No. Faktur: ${escapeHtml(tx.noFaktur || '-')}
+                  </span>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+                  Sales: ${escapeHtml(tx.sales || '-')} • File: ${escapeHtml(tx.sourceFile)}
+                </div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="font-black text-sm text-red-600 dark:text-red-400 font-mono">${formatNum(tx.volKgLtr)} ${unit}</div>
+                ${state.showIncentive && tx.amountRp > 0 ? `<div class="text-[11px] text-slate-500 font-mono">${formatRupiah(tx.amountRp)}</div>` : ''}
+              </div>
+            </div>
+          `).join('');
+
+      return `
+        <div class="rounded-2xl border border-stone-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
+          <div class="px-3.5 py-2.5 bg-stone-100/90 dark:bg-slate-800/90 border-b border-stone-200 dark:border-slate-700 flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">${title}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${badgeClass}">${badgeText}</span>
+            </div>
+            <div class="text-xs font-extrabold text-slate-700 dark:text-slate-200 font-mono">
+              Total: ${formatNum(totalVol)} ${unit} (${txs.length} faktur)
+            </div>
+          </div>
+          <div class="divide-y divide-stone-200 dark:divide-slate-800">
+            ${listHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function openProductHistoryModal(storeName, brandId) {
+      const store = state.stores.find(s => s.name === storeName);
+      if (!store) return;
+      const prodMeta = NSEP_PRODUCTS.find(p => p.id === brandId);
+      if (!prodMeta) return;
+
+      const matchedTxs = state.rawTransactions.filter(tx => tx.store === storeName && tx.brandId === brandId);
+      const txs2026 = matchedTxs.filter(tx => tx.year === 2026).sort((a, b) => b.month - a.month);
+      const txs2025 = matchedTxs.filter(tx => tx.year === 2025).sort((a, b) => b.month - a.month);
+
+      document.getElementById('modalProductPortfolio').textContent = `${prodMeta.portfolio} • Satuan: ${prodMeta.unit}`;
+      document.getElementById('modalProductName').textContent = prodMeta.name;
+      document.getElementById('modalStoreContext').textContent = `Toko: ${storeName} • Total ${matchedTxs.length} transaksi tercatat (Dipisah 2026 & 2025)`;
+
+      const container = document.getElementById('modalTransactionListContainer');
+      if (matchedTxs.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs font-semibold text-slate-500 border border-stone-200 dark:border-slate-800 rounded-2xl">Belum ada riwayat transaksi pembelian untuk produk ini.</div>`;
+      } else {
+        container.innerHTML =
+          renderYearGroupBox('📆 Pengambilan Tahun 2026', 'Tahun Berjalan', 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300', txs2026, prodMeta.unit) +
+          renderYearGroupBox('📆 Pengambilan Tahun 2025', 'Pembanding / Baseline', 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200', txs2025, prodMeta.unit);
+      }
+
+      document.getElementById('productHistoryModal').classList.remove('hidden');
+    }
+
+    function closeProductHistoryModal() {
+      document.getElementById('productHistoryModal').classList.add('hidden');
     }
 
     function copyWhatsAppReport(storeName) {
