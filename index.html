@@ -20,8 +20,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Custom Scrollbar yang nyaman & jelas */
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 7px; height: 7px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -29,123 +28,99 @@
     .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
     .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-    /* =====================================================================
-       MOTION GRAPHICS & INTERACTIVE ANIMATIONS (KLIK & SCROLL)
-       ===================================================================== */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
     @keyframes floatSlow {
       0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-5px); }
+      50% { transform: translateY(-4px); }
     }
     .animate-float-slow {
       animation: floatSlow 3.6s ease-in-out infinite;
     }
 
     @keyframes panelSlideUp {
-      0% { opacity: 0; transform: translateY(14px) scale(0.99); }
+      0% { opacity: 0; transform: translateY(12px) scale(0.99); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     .animate-panel-enter {
-      animation: panelSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: panelSlideUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
-    /* Scroll Reveal Class */
-    .reveal-on-scroll {
-      opacity: 0;
-      transform: translateY(16px);
-      transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .reveal-on-scroll.is-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* Tactile Click Motion untuk Bapak & Ibu */
     .btn-motion {
       position: relative;
       overflow: hidden;
-      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background-color 0.2s ease;
+      transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background-color 0.2s ease;
     }
-    .btn-motion:hover {
-      transform: translateY(-1.5px);
-    }
-    .btn-motion:active {
-      transform: scale(0.96);
-    }
+    .btn-motion:hover { transform: translateY(-1px); }
+    .btn-motion:active { transform: scale(0.97); }
 
-    /* Click Ripple Effect */
     .click-ripple {
       position: absolute;
       border-radius: 50%;
       transform: scale(0);
-      animation: rippleAnim 0.55s linear;
-      background-color: rgba(255, 255, 255, 0.45);
+      animation: rippleAnim 0.5s linear;
+      background-color: rgba(255, 255, 255, 0.4);
       pointer-events: none;
     }
     @keyframes rippleAnim {
-      to {
-        transform: scale(4);
-        opacity: 0;
-      }
+      to { transform: scale(4); opacity: 0; }
     }
 
-    /* Scroll Progress Bar */
-    #scrollProgressBar {
-      transition: width 0.12s ease-out;
-    }
+    #scrollProgressBar { transition: width 0.12s ease-out; }
   </style>
 </head>
-<body class="bg-stone-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col selection:bg-red-600 selection:text-white transition-colors duration-300">
+<body class="bg-stone-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col pb-20 lg:pb-0 selection:bg-red-600 selection:text-white transition-colors duration-300">
 
-  <!-- Top Navigation & Brand Header (Santani Red & Warm Executive Theme) -->
+  <!-- Top Navigation Header -->
   <header class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm sticky top-0 z-30 border-b-2 border-red-600 transition-colors duration-300">
-    <!-- Subtle Top Scroll Progress Indicator -->
     <div class="w-full h-1 bg-stone-200 dark:bg-slate-800 overflow-hidden">
       <div id="scrollProgressBar" class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 w-0"></div>
     </div>
 
-    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-      <!-- Brand Identity with Official Santani Logo -->
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3.5">
-          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#E60000] p-1.5 shadow-md border border-red-700/30 flex items-center justify-center shrink-0 animate-float-slow">
-            <!-- Vector SVG Logo PT Santani Agro Lestari - Sahabat Setia Petani -->
-            <svg viewBox="0 0 200 200" class="w-full h-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo Santani Sahabat Setia Petani">
+    <div class="max-w-[1440px] mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+      <!-- Brand Identity -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-[#E60000] p-1.5 shadow-md border border-red-700/30 flex items-center justify-center shrink-0 animate-float-slow">
+            <svg viewBox="0 0 200 200" class="w-full h-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo Santani">
               <rect width="200" height="200" rx="16" fill="#E60000"/>
-              <!-- Interlocking White 'S' Emblem -->
               <path d="M88 30 H148 C170 30 185 45 185 66 C185 87 170 102 148 102 H88 V80 H144 C153 80 159 74 159 66 C159 58 153 52 144 52 H88 C79 52 73 58 73 66 C73 72 77 77 83 79 L72 99 C57 93 47 80 47 66 C47 45 64 30 88 30 Z" fill="#FFFFFF"/>
               <path d="M112 152 H52 C30 152 15 137 15 116 C15 95 30 80 52 80 H112 V102 H56 C47 102 41 108 41 116 C41 124 47 130 56 130 H112 C121 130 127 124 127 116 C127 110 123 105 117 103 L128 83 C143 89 153 102 153 116 C153 137 136 152 112 152 Z" fill="#FFFFFF"/>
-              <!-- Tagline -->
               <text x="100" y="180" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="18.5" letter-spacing="0.3">Sahabat Setia Petani</text>
             </svg>
           </div>
-
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <h1 class="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">SANTANI NSEP 2026</h1>
-              <span class="px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider rounded-full bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+              <h1 class="text-base sm:text-xl font-black tracking-tight text-slate-900 dark:text-white">SANTANI NSEP 2026</h1>
+              <span class="px-2 py-0.5 text-[10px] sm:text-xs font-extrabold uppercase tracking-wider rounded-full bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
                 Cek Target & Produk
               </span>
             </div>
-            <p class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 mt-0.5">
+            <p class="text-[11px] sm:text-sm font-medium text-slate-600 dark:text-slate-400">
               PT Santani Agro Lestari • <span class="italic font-semibold text-red-700 dark:text-red-400">Sahabat Setia Petani</span>
             </p>
           </div>
         </div>
+
+        <!-- Mobile Theme Button -->
+        <button onclick="cycleThemeMode()" class="md:hidden btn-motion inline-flex items-center gap-1 px-2.5 py-2 rounded-xl bg-stone-100 dark:bg-slate-800 border border-stone-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-xs font-extrabold shrink-0">
+          <span class="themeToggleLabelMobile">💻 Sistem</span>
+        </button>
       </div>
 
-      <!-- Compact Global Controls (Periode, Mode Sales, Tema) -->
-      <div class="flex flex-wrap items-center gap-2">
-        <!-- Period Range Selector -->
-        <div id="periodSelectorBox" class="hidden items-center gap-2 bg-stone-100 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-stone-300 dark:border-slate-700 text-xs sm:text-sm">
-          <span class="text-slate-600 dark:text-slate-300 font-bold">📅 Bulan:</span>
-          <select id="startMonthSelect" onchange="changeEvaluationPeriod()" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold rounded-xl px-2 py-1 border border-stone-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+      <!-- Compact Global Controls -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5 md:pb-0">
+        <div id="periodSelectorBox" class="hidden items-center gap-1.5 bg-stone-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-stone-300 dark:border-slate-700 text-xs shrink-0">
+          <span class="text-slate-600 dark:text-slate-300 font-bold">📅</span>
+          <select id="startMonthSelect" onchange="changeEvaluationPeriod()" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold rounded-lg px-1.5 py-1 border border-stone-300 dark:border-slate-600 focus:outline-none">
             <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
             <option value="4">Apr</option><option value="5">Mei</option><option value="6">Jun</option>
             <option value="7" selected>Jul</option><option value="8">Agu</option><option value="9">Sep</option>
             <option value="10">Okt</option><option value="11">Nop</option><option value="12">Des</option>
           </select>
-          <span class="text-slate-500 dark:text-slate-400 font-bold">s/d</span>
-          <select id="endMonthSelect" onchange="changeEvaluationPeriod()" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold rounded-xl px-2 py-1 border border-stone-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+          <span class="text-slate-500 font-bold">-</span>
+          <select id="endMonthSelect" onchange="changeEvaluationPeriod()" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold rounded-lg px-1.5 py-1 border border-stone-300 dark:border-slate-600 focus:outline-none">
             <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
             <option value="4">Apr</option><option value="5">Mei</option><option value="6">Jun</option>
             <option value="7">Jul</option><option value="8">Agu</option><option value="9">Sep</option>
@@ -153,24 +128,22 @@
           </select>
         </div>
 
-        <!-- Toggle Hide/Show Incentive Rupiah -->
-        <button id="btnToggleIncentive" onclick="toggleIncentiveVisibility()" class="btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold shadow-2xs" title="Sembunyikan atau tampilkan angka Rupiah">
+        <button id="btnToggleIncentive" onclick="toggleIncentiveVisibility()" class="btn-motion inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs font-extrabold shrink-0">
           <span>🙈 Mode Sales (Rp Tertutup)</span>
         </button>
 
-        <!-- Theme Switcher (System / Light / Dark) -->
-        <button id="btnThemeToggle" onclick="cycleThemeMode()" class="btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-stone-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-xs sm:text-sm font-extrabold shadow-2xs" title="Ganti Tampilan: Ikuti Sistem / Terang / Gelap">
+        <button id="btnThemeToggle" onclick="cycleThemeMode()" class="hidden md:inline-flex btn-motion items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-stone-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-xs font-extrabold shrink-0">
           <span id="themeToggleLabel">💻 Sistem</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Workspace Layout with Dedicated Navigation Sidebar -->
-  <div class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 sm:py-6 flex flex-col lg:flex-row gap-6 items-start">
+  <!-- Main Workspace Layout -->
+  <div class="flex-1 max-w-[1440px] w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-6 flex flex-col lg:flex-row gap-5 items-start">
 
-    <!-- Left Navigation Sidebar (Memisahkan Penginputan Data vs Hasil Evaluasi) -->
-    <aside class="w-full lg:w-64 shrink-0 lg:sticky lg:top-24 space-y-4">
+    <!-- Desktop Sidebar -->
+    <aside class="hidden lg:block w-64 shrink-0 sticky top-24 space-y-4">
       <nav class="bg-white dark:bg-slate-900 rounded-3xl p-3 border border-stone-200 dark:border-slate-800 shadow-2xs space-y-1.5">
         <div class="px-3 pt-1.5 pb-1 text-[11px] font-black uppercase tracking-wider text-slate-400">Menu Utama</div>
 
@@ -190,7 +163,7 @@
         </button>
       </nav>
 
-      <!-- Quick Status & Global Export Card in Sidebar -->
+      <!-- Status Card -->
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-stone-200 dark:border-slate-800 shadow-2xs space-y-3">
         <div class="text-xs font-black uppercase tracking-wider text-slate-400">Status Data Aktif</div>
         <div class="flex items-start gap-2.5">
@@ -212,34 +185,33 @@
       </div>
     </aside>
 
-    <!-- Right Main Content Area -->
+    <!-- Main Content Area -->
     <main class="flex-1 w-full min-w-0">
 
       <!-- ===================================================================
-           VIEW 1: PUSAT PENGINPUTAN & PENGATURAN DATA (INPUT TAB)
+           VIEW 1: PUSAT INPUT & PENGATURAN DATA
            =================================================================== -->
-      <section id="inputWorkspaceSection" class="space-y-6 animate-panel-enter">
-        <!-- Upload Dropzone Card -->
-        <div id="dropArea" class="bg-white dark:bg-slate-900 border-2 border-dashed border-stone-300 dark:border-slate-700 hover:border-red-500 rounded-3xl p-8 sm:p-12 text-center shadow-2xs transition-all">
-          <div class="w-18 h-18 w-20 h-20 mx-auto rounded-3xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mb-5 shadow-inner animate-float-slow">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <section id="inputWorkspaceSection" class="space-y-5 animate-panel-enter">
+        <div id="dropArea" class="bg-white dark:bg-slate-900 border-2 border-dashed border-stone-300 dark:border-slate-700 hover:border-red-500 rounded-3xl p-6 sm:p-12 text-center shadow-2xs transition-all">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mb-4 shadow-inner animate-float-slow">
+            <svg class="w-9 h-9 sm:w-10 sm:h-10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-2.5">
+          <h2 class="text-xl sm:text-3xl font-black text-slate-900 dark:text-white mb-2">
             Pusat Input Data Penjualan
           </h2>
-          <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-7 leading-relaxed">
-            Masukkan file laporan penjualan dari Accurate (<b>.xls</b>, <b>.xlsx</b>, atau <b>.csv</b>). Setelah selesai, tampilan otomatis berpindah ke menu <b>Hasil & Cek Kios</b>.
+          <p class="text-xs sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-6 leading-relaxed">
+            Masukkan file laporan penjualan dari Accurate (<b>.xls</b>, <b>.xlsx</b>, atau <b>.csv</b>). Setelah selesai, otomatis berpindah ke layar <b>Hasil & Cek Kios</b>.
           </p>
 
-          <div class="flex flex-wrap items-center justify-center gap-3">
-            <label for="fileInput" class="btn-motion cursor-pointer inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm sm:text-base shadow-lg">
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <label for="fileInput" class="w-full sm:w-auto btn-motion cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm sm:text-base shadow-lg">
               <span>📂 Upload File Baru (Ganti Data)</span>
             </label>
             <input id="fileInput" type="file" multiple accept=".xls,.xlsx,.csv" class="hidden" onchange="handleFileUpload(event, false)" />
 
-            <label id="btnMergeInputCard" for="mergeFileInput" class="btn-motion hidden cursor-pointer inline-flex items-center gap-2 px-6 py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-sm sm:text-base shadow-md">
+            <label id="btnMergeInputCard" for="mergeFileInput" class="w-full sm:w-auto btn-motion hidden cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-sm sm:text-base shadow-md">
               <span>➕ Gabung File Sales Lain</span>
             </label>
             <input id="mergeFileInput" type="file" multiple accept=".xls,.xlsx,.csv" class="hidden" onchange="handleFileUpload(event, true)" />
@@ -259,36 +231,39 @@
           </div>
         </div>
 
-        <!-- Pengaturan Skema & Daftar Peserta -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <!-- Default Tier Card -->
-          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-stone-200 dark:border-slate-800 shadow-2xs space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200 dark:border-slate-800 shadow-2xs space-y-3">
             <h3 class="text-base font-black text-slate-900 dark:text-white">1. Skema Default Kios</h3>
             <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Pilih acuan utama perhitungan untuk kios yang belum diatur secara khusus (bisa diubah per kios di menu Hasil).
+              Acuan utama perhitungan untuk kios peserta program (bisa diubah per kios di menu Hasil).
             </p>
-            <div class="inline-flex items-center bg-stone-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-stone-300 dark:border-slate-700">
-              <button id="btnTierR1" onclick="setDefaultTier('R1')" class="btn-motion px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm">
-                Skema R-1 (Min. 12 Merek)
+            <div class="flex flex-wrap gap-2 bg-stone-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-stone-300 dark:border-slate-700">
+              <button id="btnTierR1" onclick="setDefaultTier('R1')" class="flex-1 btn-motion px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm">
+                Skema R-1 (12 Merek)
               </button>
-              <button id="btnTierR2" onclick="setDefaultTier('R2')" class="btn-motion px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
-                Skema R-2 (Min. 8 Merek)
+              <button id="btnTierR2" onclick="setDefaultTier('R2')" class="flex-1 btn-motion px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all text-slate-700 dark:text-slate-300">
+                Skema R-2 (8 Merek)
               </button>
             </div>
           </div>
 
-          <!-- Bulk Tagging & Reset Card -->
-          <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-stone-200 dark:border-slate-800 shadow-2xs space-y-3">
-            <h3 class="text-base font-black text-slate-900 dark:text-white">2. Daftar Kasta Kios & Reset Data</h3>
+          <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-stone-200 dark:border-slate-800 shadow-2xs space-y-3">
+            <h3 class="text-base font-black text-slate-900 dark:text-white">2. Ceklist Peserta & Reset Data</h3>
             <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Atur sekaligus mana saja kios peserta R-1, R-2, atau Non-Program, atau bersihkan memori browser.
+              Atur kios yang ikut program atau bersihkan data tersimpan di perangkat ini.
             </p>
-            <div class="flex flex-wrap gap-2.5 pt-1">
-              <button onclick="openTierModal()" class="btn-motion inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-stone-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-extrabold">
-                <span>🏷️ Atur Daftar R-1 / R-2</span>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="openTierModal()" class="btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-stone-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-extrabold">
+                <span>🏷️ Atur Daftar R-1/R-2</span>
               </button>
-              <button onclick="clearSavedData()" class="btn-motion inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/70 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-extrabold">
-                <span>🗑️ Hapus Data Tersimpan</span>
+              <button onclick="bulkToggleProgramParticipation(true)" class="btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-extrabold">
+                <span>☑️ Centang Semua</span>
+              </button>
+              <button onclick="bulkToggleProgramParticipation(false)" class="btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-extrabold">
+                <span>⬜ Kosongkan Ceklist</span>
+              </button>
+              <button onclick="clearSavedData()" class="btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-extrabold">
+                <span>🗑️ Hapus Data</span>
               </button>
             </div>
           </div>
@@ -296,106 +271,117 @@
       </section>
 
       <!-- ===================================================================
-           VIEW 2: HASIL EVALUASI & AUDIT PER KIOS (RESULTS TAB)
+           VIEW 2: HASIL EVALUASI & AUDIT PER KIOS
            =================================================================== -->
-      <section id="dashboardSection" class="hidden space-y-6">
+      <section id="dashboardSection" class="hidden space-y-5">
 
-        <!-- KPI Summary Cards (Large & Friendly Numbers) -->
-        <div class="grid grid-cols-2 xl:grid-cols-5 gap-3.5">
-          <div onclick="setStatusFilter('ELIGIBLE')" class="btn-motion reveal-on-scroll is-visible cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-emerald-500 rounded-2xl p-4 border border-stone-200 dark:border-slate-800 shadow-2xs">
-            <div class="text-xs font-extrabold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">✅ Sudah Lolos Syarat</div>
-            <div id="kpiEligible" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Merek sah & masuk target</div>
+        <!-- KPI Summary Cards (Horizontal swipeable on Mobile, 5-grid on Desktop) -->
+        <div class="flex lg:grid lg:grid-cols-5 gap-3 overflow-x-auto no-scrollbar pb-1">
+          <div onclick="setStatusFilter('ELIGIBLE')" class="min-w-[165px] lg:min-w-0 btn-motion cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-emerald-500 rounded-2xl p-3.5 sm:p-4 border border-stone-200 dark:border-slate-800 shadow-2xs shrink-0">
+            <div class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">✅ Lolos Syarat</div>
+            <div id="kpiEligible" class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Merek sah & target</div>
           </div>
 
-          <div onclick="setStatusFilter('VOL_PENDING')" class="btn-motion reveal-on-scroll is-visible cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-amber-500 rounded-2xl p-4 border border-stone-200 dark:border-slate-800 shadow-2xs">
-            <div class="text-xs font-extrabold uppercase tracking-wide text-amber-700 dark:text-amber-400">⚠️ Tinggal Kejar Volume</div>
-            <div id="kpiVolPending" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Jumlah merek sudah cukup</div>
+          <div onclick="setStatusFilter('VOL_PENDING')" class="min-w-[165px] lg:min-w-0 btn-motion cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-amber-500 rounded-2xl p-3.5 sm:p-4 border border-stone-200 dark:border-slate-800 shadow-2xs shrink-0">
+            <div class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-amber-700 dark:text-amber-400">⚠️ Kejar Volume</div>
+            <div id="kpiVolPending" class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Merek sudah cukup</div>
           </div>
 
-          <div onclick="setStatusFilter('MISSING_PB')" class="btn-motion reveal-on-scroll is-visible cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-rose-500 rounded-2xl p-4 border border-stone-200 dark:border-slate-800 shadow-2xs">
-            <div class="text-xs font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-400">🚨 Kurang Power Brand</div>
-            <div id="kpiMissingPB" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Wajib 15.15.15 & Cantik</div>
+          <div onclick="setStatusFilter('MISSING_PB')" class="min-w-[165px] lg:min-w-0 btn-motion cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-rose-500 rounded-2xl p-3.5 sm:p-4 border border-stone-200 dark:border-slate-800 shadow-2xs shrink-0">
+            <div class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-rose-700 dark:text-rose-400">🚨 Kurang PB</div>
+            <div id="kpiMissingPB" class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Wajib 15.15.15 & Cantik</div>
           </div>
 
-          <div onclick="setStatusFilter('MISSING_PORTFOLIO')" class="btn-motion reveal-on-scroll is-visible cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-orange-500 rounded-2xl p-4 border border-stone-200 dark:border-slate-800 shadow-2xs">
-            <div class="text-xs font-extrabold uppercase tracking-wide text-orange-700 dark:text-orange-400">❌ Kurang Jumlah Merek</div>
-            <div id="kpiMissingPortfolio" class="text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Belum cukup jenis produk</div>
+          <div onclick="setStatusFilter('MISSING_PORTFOLIO')" class="min-w-[165px] lg:min-w-0 btn-motion cursor-pointer bg-white dark:bg-slate-900 hover:ring-2 hover:ring-orange-500 rounded-2xl p-3.5 sm:p-4 border border-stone-200 dark:border-slate-800 shadow-2xs shrink-0">
+            <div class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-orange-700 dark:text-orange-400">❌ Kurang Merek</div>
+            <div id="kpiMissingPortfolio" class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">0</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Belum cukup jenis</div>
           </div>
 
-          <div class="reveal-on-scroll is-visible col-span-2 xl:col-span-1 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 text-white rounded-2xl p-4 border border-slate-700 shadow-sm">
-            <div class="text-xs font-extrabold uppercase tracking-wide text-amber-400">💰 Estimasi Program</div>
-            <div id="kpiTotalIncentive" class="text-xl sm:text-2xl font-black text-white mt-1 truncate">••••••••</div>
-            <div id="kpiIncentiveSub" class="text-xs text-slate-300 mt-0.5">Mode Sales (Rp disembunyikan)</div>
+          <div class="min-w-[185px] lg:min-w-0 bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 text-white rounded-2xl p-3.5 sm:p-4 border border-slate-700 shadow-sm shrink-0">
+            <div class="text-[11px] sm:text-xs font-extrabold uppercase tracking-wide text-amber-400">💰 Estimasi Program</div>
+            <div id="kpiTotalIncentive" class="text-lg sm:text-2xl font-black text-white mt-1 truncate">••••••••</div>
+            <div id="kpiIncentiveSub" class="text-[11px] text-slate-300 mt-0.5">Mode Sales (Rp tertutup)</div>
           </div>
         </div>
 
-        <!-- Split View: Store Selector List & Detailed Audit -->
+        <!-- Split View: Store List & Store Detail -->
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
 
           <!-- Store List Column -->
-          <div class="xl:col-span-4 bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
-            <div class="p-4 border-b border-stone-200 dark:border-slate-800 space-y-3 bg-stone-50/90 dark:bg-slate-900/90">
+          <div id="storeListSection" class="xl:col-span-4 bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
+            <div class="p-3.5 sm:p-4 border-b border-stone-200 dark:border-slate-800 space-y-2.5 bg-stone-50/90 dark:bg-slate-900/90">
               <div class="flex items-center justify-between">
-                <h3 class="text-base font-black text-slate-900 dark:text-white">Pilih Toko / Kios</h3>
-                <span id="filteredStoreCount" class="px-3 py-1 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 text-xs font-extrabold">0 toko</span>
+                <h3 class="text-base font-black text-slate-900 dark:text-white">Daftar Kios / Toko</h3>
+                <span id="filteredStoreCount" class="px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 text-xs font-extrabold">0 toko</span>
+              </div>
+
+              <!-- Program Participation Filter -->
+              <div class="grid grid-cols-3 gap-1 bg-stone-200/80 dark:bg-slate-800 p-1 rounded-2xl border border-stone-300 dark:border-slate-700">
+                <button data-part="PROGRAM_ONLY" onclick="setParticipationFilter('PROGRAM_ONLY')" class="btn-motion part-filter-btn py-1.5 px-1.5 rounded-xl text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
+                  ☑️ Peserta
+                </button>
+                <button data-part="ALL" onclick="setParticipationFilter('ALL')" class="btn-motion part-filter-btn py-1.5 px-1.5 rounded-xl text-[11px] font-extrabold bg-red-600 text-white shadow-2xs">
+                  📋 Semua Kios
+                </button>
+                <button data-part="NON_ONLY" onclick="setParticipationFilter('NON_ONLY')" class="btn-motion part-filter-btn py-1.5 px-1.5 rounded-xl text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
+                  ⬜ Non-Prog
+                </button>
               </div>
 
               <!-- Instant Search Input -->
               <div class="relative">
-                <input id="searchInput" type="text" placeholder="Ketik nama toko, kota, atau sales..."
+                <input id="searchInput" type="text" placeholder="Cari nama toko, kota, atau sales..."
                        oninput="handleSearchInput(this.value)"
-                       class="w-full pl-10 pr-4 py-2.5 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-red-500 transition-colors" />
-                <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                       class="w-full pl-9 pr-4 py-2.5 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-red-500" />
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
               </div>
 
               <!-- Sales Filter Dropdown -->
               <select id="salesFilter" onchange="state.salesFilter = this.value; listRenderLimit = 60; renderStoreList();"
-                      class="w-full px-3.5 py-2.5 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-red-500">
+                      class="w-full px-3 py-2 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-red-500">
                 <option value="ALL">👤 Semua Nama Sales</option>
               </select>
 
               <!-- Status Filter Pills -->
-              <div class="flex flex-wrap gap-1.5">
-                <button data-filter="ALL" onclick="setStatusFilter('ALL')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-red-600 text-white shadow-2xs">
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                <button data-filter="ALL" onclick="setStatusFilter('ALL')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-red-600 text-white shadow-2xs shrink-0">
                   Semua
                 </button>
-                <button data-filter="MISSING_PB" onclick="setStatusFilter('MISSING_PB')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
+                <button data-filter="MISSING_PB" onclick="setStatusFilter('MISSING_PB')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
                   🚨 Kurang PB
                 </button>
-                <button data-filter="MISSING_PORTFOLIO" onclick="setStatusFilter('MISSING_PORTFOLIO')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
+                <button data-filter="MISSING_PORTFOLIO" onclick="setStatusFilter('MISSING_PORTFOLIO')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
                   ❌ Kurang Merek
                 </button>
-                <button data-filter="VOL_PENDING" onclick="setStatusFilter('VOL_PENDING')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
+                <button data-filter="VOL_PENDING" onclick="setStatusFilter('VOL_PENDING')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
                   ⚠️ Vol Kurang
                 </button>
-                <button data-filter="ELIGIBLE" onclick="setStatusFilter('ELIGIBLE')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
+                <button data-filter="ELIGIBLE" onclick="setStatusFilter('ELIGIBLE')" class="btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
                   ✅ Lolos
                 </button>
               </div>
             </div>
 
-            <!-- Scrollable Store Cards -->
-            <div id="storeListContainer" onscroll="handleListScroll()" class="divide-y divide-stone-200 dark:divide-slate-800 max-h-[68vh] overflow-y-auto custom-scrollbar">
-              <!-- Populated dynamically -->
+            <div id="storeListContainer" onscroll="handleListScroll()" class="divide-y divide-stone-200 dark:divide-slate-800 max-h-[52vh] xl:max-h-[68vh] overflow-y-auto custom-scrollbar">
             </div>
           </div>
 
           <!-- Detailed Store Diagnosis Panel -->
-          <div id="storeDetailPanel" class="xl:col-span-8 bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xs p-5 sm:p-7 min-h-[460px]">
-            <div class="h-full flex flex-col items-center justify-center text-center py-20 text-slate-500 dark:text-slate-400 animate-panel-enter">
-              <div class="w-16 h-16 rounded-2xl bg-stone-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-4 animate-float-slow">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <div id="storeDetailPanel" class="xl:col-span-8 bg-white dark:bg-slate-900 rounded-3xl border border-stone-200 dark:border-slate-800 shadow-2xs p-4 sm:p-7 min-h-[420px]">
+            <div class="h-full flex flex-col items-center justify-center text-center py-16 text-slate-500 dark:text-slate-400 animate-panel-enter">
+              <div class="w-14 h-14 rounded-2xl bg-stone-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-3 animate-float-slow">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
                 </svg>
               </div>
-              <p class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100">Silakan Klik Nama Toko di Sebelah Kiri</p>
-              <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-md">Bapak & Ibu dapat langsung melihat produk apa saja yang sudah tercapai, apa yang masih kurang, dan mengunduh Excel per kios.</p>
+              <p class="text-base font-extrabold text-slate-800 dark:text-slate-100">Silakan Pilih Nama Kios</p>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md">Bapak & Ibu dapat langsung melihat produk & bulan pengambilan yang sudah tercapai maupun yang masih kurang.</p>
             </div>
           </div>
 
@@ -404,52 +390,72 @@
     </main>
   </div>
 
+  <!-- Mobile Bottom Navigation Bar (Khusus HP / Layar Kecil) -->
+  <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-stone-200 dark:border-slate-800 px-3 py-2 flex items-center justify-around shadow-lg">
+    <button id="mobNavResults" onclick="switchWorkspaceTab('RESULTS')" class="btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-red-600 font-extrabold text-[11px]">
+      <span class="text-base">📊</span>
+      <span>Hasil Kios</span>
+    </button>
+    <button id="mobNavInput" onclick="switchWorkspaceTab('INPUT')" class="btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-600 dark:text-slate-300 font-extrabold text-[11px]">
+      <span class="text-base">📥</span>
+      <span>Input Data</span>
+    </button>
+    <button id="mobNavExcel" onclick="exportToExcel()" class="btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-600 dark:text-slate-300 font-extrabold text-[11px]">
+      <span class="text-base">📑</span>
+      <span>Rekap Excel</span>
+    </button>
+    <button onclick="openAiKeyModal()" class="btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-indigo-600 dark:text-indigo-400 font-extrabold text-[11px]">
+      <span class="text-base">✨</span>
+      <span>AI Key</span>
+    </button>
+  </nav>
+
   <!-- Footer -->
-  <footer class="bg-white dark:bg-slate-900 border-t border-stone-200 dark:border-slate-800 py-4 px-4 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
+  <footer class="hidden lg:block bg-white dark:bg-slate-900 border-t border-stone-200 dark:border-slate-800 py-4 px-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <span class="font-bold text-slate-700 dark:text-slate-200">PT Santani Agro Lestari</span> • <span class="italic text-red-700 dark:text-red-400 font-semibold">Sahabat Setia Petani</span> • National Sales Excellence Program (NSEP) 2026
   </footer>
 
   <!-- Bulk Tier Tagging Modal -->
   <div id="tierModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-stone-200 dark:border-slate-700 animate-panel-enter">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-stone-200 dark:border-slate-700 animate-panel-enter">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-lg font-black text-slate-900 dark:text-white">Atur Daftar Toko R-1 / R-2 / NON</h3>
-        <button onclick="closeTierModal()" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-lg flex items-center justify-center">&times;</button>
+        <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white">Atur Daftar Toko R-1 / R-2 / NON</h3>
+        <button onclick="closeTierModal()" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-lg flex items-center justify-center">&times;</button>
       </div>
-      <p class="text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
-        Salin dan tempel daftar dari Excel dengan format: <code class="bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded font-bold text-slate-900 dark:text-white">NAMA TOKO [Tab/Koma] R1 atau R2 atau NON</code>
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
+        Tempel daftar dari Excel dengan format: <code class="bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded font-bold text-slate-900 dark:text-white">NAMA TOKO, R1 atau R2 atau NON</code>
       </p>
-      <textarea id="tierBulkInput" rows="10" class="w-full p-3.5 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-mono focus:outline-none focus:border-red-500"></textarea>
-      <div class="mt-4 flex justify-end gap-2.5">
-        <button onclick="closeTierModal()" class="btn-motion px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 text-sm font-bold text-slate-700 dark:text-slate-300">Batal</button>
-        <button onclick="applyBulkTierTags()" class="btn-motion px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-sm font-extrabold text-white shadow">Simpan Daftar</button>
+      <textarea id="tierBulkInput" rows="9" class="w-full p-3.5 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-mono focus:outline-none focus:border-red-500"></textarea>
+      <div class="mt-4 flex justify-end gap-2">
+        <button onclick="closeTierModal()" class="btn-motion px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Batal</button>
+        <button onclick="applyBulkTierTags()" class="btn-motion px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs sm:text-sm font-extrabold text-white shadow">Simpan Daftar</button>
       </div>
     </div>
   </div>
 
   <!-- Gemini AI Key Modal -->
   <div id="aiKeyModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 dark:border-slate-700 animate-panel-enter">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-stone-200 dark:border-slate-700 animate-panel-enter">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-lg font-black text-slate-900 dark:text-white">✨ Pengaturan Asisten AI</h3>
-        <button onclick="closeAiKeyModal()" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-lg flex items-center justify-center">&times;</button>
+        <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white">✨ Pengaturan Asisten AI</h3>
+        <button onclick="closeAiKeyModal()" class="w-8 h-8 rounded-full bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-lg flex items-center justify-center">&times;</button>
       </div>
-      <p class="text-sm text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
-        Membantu membaca format file Excel dari komputer berbeda secara otomatis dan memberikan saran penawaran produk untuk setiap toko.
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
+        Membantu membaca format file Excel dari komputer berbeda secara otomatis dan menyusun saran penawaran produk untuk tiap kios.
       </p>
       <input id="geminiApiKeyInput" type="password" placeholder="Masukkan Gemini API Key (AIzaSy...)" class="w-full px-3.5 py-3 rounded-2xl border-2 border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-indigo-500" />
       <div class="mt-5 flex items-center justify-between gap-2">
-        <button onclick="clearAiKey()" class="btn-motion px-3.5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/70 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300">Hapus Key</button>
+        <button onclick="clearAiKey()" class="btn-motion px-3.5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-xs font-bold text-rose-700 dark:text-rose-300">Hapus Key</button>
         <div class="flex gap-2">
-          <button onclick="closeAiKeyModal()" class="btn-motion px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 dark:hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Tutup</button>
-          <button onclick="saveAiKey()" class="btn-motion px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs sm:text-sm font-extrabold text-white shadow">Simpan Key</button>
+          <button onclick="closeAiKeyModal()" class="btn-motion px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">Tutup</button>
+          <button onclick="saveAiKey()" class="btn-motion px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-extrabold text-white shadow">Simpan Key</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl text-slate-950 font-extrabold text-sm shadow-2xl transition-all"></div>
+  <div id="toastNotification" class="hidden fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 px-4 py-3 rounded-2xl text-slate-950 font-extrabold text-xs sm:text-sm shadow-2xl transition-all"></div>
 
   <script>
     // =========================================================================
@@ -496,7 +502,7 @@
       { id: 'CP_TSP', portfolio: 'Core Portfolio', name: 'Cap Kuda Sakti TSP', unit: 'Kg', r1: { s3: null, s2: null, s1: [30000, Infinity, 20], growth: 15, blind: 10 }, r2: { min: null, rate: 0 } }
     ];
 
-    const STORAGE_KEY = 'santani_nsep_2026_state_v5';
+    const STORAGE_KEY = 'santani_nsep_2026_state_v6';
     const AI_KEY_STORAGE = 'santani_nsep_gemini_key';
     const THEME_STORAGE_KEY = 'santani_nsep_theme_mode';
     const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nop', 'Des'];
@@ -509,6 +515,7 @@
       endMonth: 12,
       showIncentive: false,
       activeTab: 'INPUT',
+      participationFilter: 'ALL',
       statusFilter: 'ALL',
       salesFilter: 'ALL',
       searchQuery: '',
@@ -518,13 +525,7 @@
       unmappedItems: [],
       loadedFiles: [],
       lastUpdated: '',
-      routingStats: {
-        accepted: 0,
-        duplicates: 0,
-        rejected: 0,
-        directCount: 0,
-        viaR1Count: 0
-      }
+      routingStats: { accepted: 0, duplicates: 0, rejected: 0, directCount: 0, viaR1Count: 0 }
     };
 
     let evalCache = new Map();
@@ -532,22 +533,20 @@
     let searchDebounceTimer = null;
 
     // =========================================================================
-    // 2. THEME SWITCHER (SYSTEM / LIGHT / DARK) & WORKSPACE NAVIGATION
+    // 2. THEME SWITCHER & WORKSPACE NAVIGATION
     // =========================================================================
     function applyThemeMode(mode) {
       const root = document.documentElement;
-      const label = document.getElementById('themeToggleLabel');
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       const isDark = mode === 'dark' || (mode === 'system' && prefersDark);
 
       if (isDark) root.classList.add('dark');
       else root.classList.remove('dark');
 
-      if (label) {
-        if (mode === 'system') label.textContent = '💻 Sistem';
-        else if (mode === 'light') label.textContent = '☀️ Terang';
-        else label.textContent = '🌙 Gelap';
-      }
+      const txt = mode === 'system' ? '💻 Sistem' : (mode === 'light' ? '☀️ Terang' : '🌙 Gelap');
+      const labelDesktop = document.getElementById('themeToggleLabel');
+      if (labelDesktop) labelDesktop.textContent = txt;
+      document.querySelectorAll('.themeToggleLabelMobile').forEach(el => el.textContent = txt);
     }
 
     function cycleThemeMode() {
@@ -559,9 +558,7 @@
 
     if (window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if ((localStorage.getItem(THEME_STORAGE_KEY) || 'system') === 'system') {
-          applyThemeMode('system');
-        }
+        if ((localStorage.getItem(THEME_STORAGE_KEY) || 'system') === 'system') applyThemeMode('system');
       });
     }
 
@@ -571,17 +568,23 @@
       const dashSec = document.getElementById('dashboardSection');
       const navRes = document.getElementById('navTabResults');
       const navInp = document.getElementById('navTabInput');
+      const mobRes = document.getElementById('mobNavResults');
+      const mobInp = document.getElementById('mobNavInput');
 
       if (tab === 'RESULTS') {
         inputSec.classList.add('hidden');
         dashSec.classList.remove('hidden');
-        navRes.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
-        navInp.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800';
+        if (navRes) navRes.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
+        if (navInp) navInp.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800';
+        if (mobRes) mobRes.className = 'btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-extrabold text-[11px]';
+        if (mobInp) mobInp.className = 'btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-600 dark:text-slate-300 font-extrabold text-[11px]';
       } else {
         dashSec.classList.add('hidden');
         inputSec.classList.remove('hidden');
-        navInp.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
-        navRes.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800';
+        if (navInp) navInp.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
+        if (navRes) navRes.className = 'btn-motion w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-left text-sm font-extrabold transition-all text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-800';
+        if (mobInp) mobInp.className = 'btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-extrabold text-[11px]';
+        if (mobRes) mobRes.className = 'btn-motion flex-1 flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-600 dark:text-slate-300 font-extrabold text-[11px]';
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -592,12 +595,12 @@
       if (!btn) return;
       if (state.showIncentive) {
         btn.innerHTML = '<span>👁️ Mode Internal (Rp Tampil)</span>';
-        btn.className = 'btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/70 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm font-extrabold shadow-2xs';
+        btn.className = 'btn-motion inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/70 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-extrabold shrink-0';
         if (kpiSub) kpiSub.textContent = 'Baseline + Growth + Blind + League';
       } else {
         btn.innerHTML = '<span>🙈 Mode Sales (Rp Tertutup)</span>';
-        btn.className = 'btn-motion inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-extrabold shadow-2xs';
-        if (kpiSub) kpiSub.textContent = 'Mode Sales (Rp disembunyikan)';
+        btn.className = 'btn-motion inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs font-extrabold shrink-0';
+        if (kpiSub) kpiSub.textContent = 'Mode Sales (Rp tertutup)';
       }
     }
 
@@ -669,6 +672,7 @@
           const mapped = mapAccurateItemToNSEP(it.rawItem, 'KG', Number(it.volKgLtr) || 0);
           return {
             rowIdx: idx,
+            invoiceLine: String(idx),
             sourceFile: 'AI-Import',
             store: String(it.store || 'UNKNOWN').toUpperCase(),
             noFaktur: '',
@@ -678,7 +682,9 @@
             rawItem: String(it.rawItem || ''),
             volKgLtr: mapped.volKgLtr,
             amountRp: 0,
-            sales: String(it.sales || 'Tanpa Nama Sales').toUpperCase()
+            sales: String(it.sales || 'Tanpa Nama Sales').toUpperCase(),
+            channel: 'DIRECT_R2',
+            r2Beneficiary: ''
           };
         });
       } catch (err) {
@@ -698,13 +704,13 @@
         const ev = getEvaluatedStore(store);
         const purchasedSummary = ev.productRows
           .filter(r => r.vol26 > 0 || r.vol25 > 0)
-          .map(r => `${r.name} (2025: ${r.vol25} ${r.unit}, 2026: ${r.vol26} ${r.unit}, status: ${r.strataLabel})`)
+          .map(r => `${r.name} (2025: ${r.vol25} ${r.unit} [${r.dates25Label || '-'}], 2026: ${r.vol26} ${r.unit} [${r.dates26Label || '-'}], status: ${r.strataLabel})`)
           .join('; ');
         const prompt = `Kamu adalah Senior Sales Strategist PT Santani Agro Lestari untuk program NSEP 2026. Analisis data toko berikut dan berikan 3 poin rekomendasi konkret berbahasa Indonesia yang singkat, tegas, dan praktis untuk tim Sales (JANGAN sebutkan nominal rupiah insentif karena rahasia):
 Toko: ${store.name} (${ev.tier})
 Portofolio Saat Ini: PB ${ev.pbCount}/2, SP ${ev.spCount}/3, CP ${ev.cpCount}/${ev.tier === 'R1' ? 3 : 6}, Total ${ev.totalBrands}/${ev.minTotalBrands}.
 Kurang PB: ${ev.missingPBNames.join(', ') || 'Lengkap'}.
-Produk Nanggung Target: ${ev.nearMisses.slice(0, 4).map(n => `${n.name} kurang ${n.gap} ${n.unit}`).join(', ') || 'Tidak ada'}.
+Produk Nanggung Target: ${ev.nearMisses.slice(0, 4).map(n => `${n.name} kurang ${n.gap} ${n.unit} (ambil: ${n.datesLabel})`).join(', ') || 'Tidak ada'}.
 Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}.`;
         const reply = await callGeminiAPI(prompt, false);
         content.innerHTML = escapeHtml(reply || 'Tidak ada respons dari AI.').replace(/\n/g, '<br>');
@@ -714,7 +720,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     }
 
     // =========================================================================
-    // 4. SPREADSHEET / ACCURATE PARSER & R-2 CHANNEL ROUTING ENGINE
+    // 4. SPREADSHEET PARSER, NORMALISASI MEREK & ROUTING R-2
     // =========================================================================
     function normalizeKeyPart(val) {
       return String(val || '').trim().toUpperCase().replace(/\s+/g, ' ');
@@ -873,17 +879,22 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     }
 
     function mapAccurateItemToNSEP(rawItem, rawSatuan, qty) {
-      const item = String(rawItem || '').toUpperCase().trim();
+      const rawUp = String(rawItem || '').toUpperCase().trim();
       const sat = String(rawSatuan || '').toUpperCase().trim();
+      // Samakan tanda '-' dan '.' serta spasi berlebih agar '15-15-15' == '15.15.15', 'K-40' == 'K40', dll.
+      const item = rawUp.replace(/-/g, '.').replace(/\s+/g, ' ');
 
-      if (item.includes('15.15.15') || item.includes('15-15-15')) return { brandId: 'PB_151515', volKgLtr: qty };
+      // POWER BRAND
+      if (item.includes('15.15.15')) return { brandId: 'PB_151515', volKgLtr: qty };
       if (item.includes('CANTIK')) return { brandId: 'PB_CANTIK', volKgLtr: qty };
 
-      if (item.includes('SANTAMIKRO GOLD')) {
+      // STRATEGIC PLATFORM (Cek UREON secara ketat sebelum UREN agar tidak tertukar)
+      if (/\bUREON\b/.test(item) || item.includes('AMMONIUM CHLORIDA')) return { brandId: 'SP_UREON', volKgLtr: qty };
+      if (item.includes('SANTAMIKRO GOLD') || item.includes('SANTAMICRO GOLD')) {
         const factor = (item.includes('2,5 GR') || item.includes('2.5 GR')) ? 0.0025 : (item.includes('25 GR') ? 0.025 : 1);
         return { brandId: 'SP_SMGOLD', volKgLtr: sat === 'KG' ? qty : qty * factor };
       }
-      if (item.includes('JAGAIR') || item.includes('JAGAAIR')) {
+      if (item.includes('JAGAIR') || item.includes('JAGAAIR') || item.includes('JAGA AIR')) {
         const factor = item.includes('500') ? 0.5 : 1;
         return { brandId: 'SP_JAGAAIR', volKgLtr: sat === 'KG' ? qty : qty * factor };
       }
@@ -891,7 +902,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
         return { brandId: 'SP_ASCOFOL', volKgLtr: sat === 'LTR' ? qty : qty * factor };
       }
-      if (item.includes('K-40') || item.includes('K40')) {
+      if (item.includes('K.40') || item.includes('K40')) {
         const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
         return { brandId: 'SP_K40', volKgLtr: sat === 'LTR' ? qty : qty * factor };
       }
@@ -899,38 +910,38 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
         return { brandId: 'SP_LOUBANG', volKgLtr: sat === 'LTR' ? qty : qty * factor };
       }
-      if (item.includes('(CUAN)') || item.includes('UREA AMONIUM NITRAT') || item.startsWith('CUAN ')) {
-        const factor = sat === 'PCH' ? 2 : (sat === 'JRC' ? 5 : 1);
+      if (item.includes('(CUAN)') || item.includes('UREA AMONIUM NITRAT') || /\bCUAN\b/.test(item)) {
+        const factor = sat === 'PCH' ? 2 : (sat === 'JRC' || sat === 'JRG' ? 5 : 1);
         return { brandId: 'SP_CUAN', volKgLtr: qty * factor };
       }
       if (item.includes('PERFECT')) return { brandId: 'SP_PERFECT', volKgLtr: qty };
       if (item.includes('NPK SPECIAL') || item.includes('NITROPHOSKA SPECIAL')) return { brandId: 'SP_SPECIAL', volKgLtr: qty };
       if (item.includes('TRIO KALI') || item.includes('TRIOKALI')) return { brandId: 'SP_TRIOKALI', volKgLtr: qty };
-      if (item.includes('UREON') || item.includes('AMMONIUM CHLORIDA')) return { brandId: 'SP_UREON', volKgLtr: qty };
       if (item.includes('SULPHOS')) return { brandId: 'SP_SULPHOS', volKgLtr: qty };
 
-      if (item.includes('ENTEC-13-10-20') || item.includes('ENTEC 13.10.20')) return { brandId: 'CP_ENTEC13', volKgLtr: qty };
-      if (item.includes('ENTEC 20.10.10') || item.includes('ENTEC-20-10-10')) return { brandId: 'CP_ENTEC20', volKgLtr: qty };
+      // CORE PORTFOLIO
+      if (item.includes('ENTEC.13.10.20') || item.includes('ENTEC 13.10.20')) return { brandId: 'CP_ENTEC13', volKgLtr: qty };
+      if (item.includes('ENTEC.20.10.10') || item.includes('ENTEC 20.10.10')) return { brandId: 'CP_ENTEC20', volKgLtr: qty };
       if (item.includes('KNOCK')) return { brandId: 'CP_KNOCK', volKgLtr: qty };
-      if (item.startsWith('UREN ') || item.startsWith('UREN@') || item === 'UREN') return { brandId: 'CP_UREN', volKgLtr: qty };
-      if (item.includes('15.0.15') || item.includes('15-0-15')) return { brandId: 'CP_SGNK', volKgLtr: qty };
+      if (/\bUREN\b/.test(item) || item.startsWith('UREN@')) return { brandId: 'CP_UREN', volKgLtr: qty };
+      if (item.includes('15.0.15')) return { brandId: 'CP_SGNK', volKgLtr: qty };
       if (item.includes('SANTANICALNIT') || item.includes('CALNIT')) return { brandId: 'CP_CALNIT', volKgLtr: qty };
       if (item.includes('CANIBOR') || item.includes('CARATE')) return { brandId: 'CP_CARATE', volKgLtr: qty };
       if (item.includes('MAGNESIUM NITRATE') || item.includes('MAGNESIUM NITRAT')) return { brandId: 'CP_MGNITRAT', volKgLtr: qty };
       if (item.includes('MAGNESIUM SULFATE') || item.includes('MAGNESIUM SULFAT') || item.includes('MANZUR')) return { brandId: 'CP_MGSULFAT', volKgLtr: qty };
-      if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)') || item.startsWith('MKP')) {
+      if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)') || /\bMKP\b/.test(item)) {
         const factor = sat === 'DUS' ? 20 : 1;
         return { brandId: 'CP_MKP', volKgLtr: qty * factor };
       }
-      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || item.startsWith('MAP')) return { brandId: 'CP_MAP', volKgLtr: qty };
+      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || /\bMAP\b/.test(item)) return { brandId: 'CP_MAP', volKgLtr: qty };
       if (item.includes('CANKALI')) return { brandId: 'CP_CANKALI', volKgLtr: qty };
-      if (item.includes('SANTAGROW ZK')) return { brandId: 'CP_SGZK', volKgLtr: qty };
+      if (item.includes('SANTAGROW ZK') || item.includes('S.GROW ZK')) return { brandId: 'CP_SGZK', volKgLtr: qty };
       if (item.includes('KNO3 PUTIH') || item.includes('S.GROW NOP') || item.includes('SANTAGROW NOP')) return { brandId: 'CP_KNO3', volKgLtr: qty };
-      if (item.includes('16.16.16') || item.includes('16-16-16')) return { brandId: 'CP_161616', volKgLtr: qty };
-      if (item.includes('17.17.17') || item.includes('17-17-17')) return { brandId: 'CP_171717', volKgLtr: qty };
+      if (item.includes('16.16.16')) return { brandId: 'CP_161616', volKgLtr: qty };
+      if (item.includes('17.17.17')) return { brandId: 'CP_171717', volKgLtr: qty };
       if (item.includes('SANTAPHOS')) return { brandId: 'CP_SANTAPHOS', volKgLtr: qty };
-      if (item.includes('15.10.20') || item.includes('15-10-20')) return { brandId: 'CP_151020', volKgLtr: qty };
-      if (item.includes('KCL GRANULAR') || item.includes('SANTAGROW KCL')) return { brandId: 'CP_KCL', volKgLtr: qty };
+      if (item.includes('15.10.20')) return { brandId: 'CP_151020', volKgLtr: qty };
+      if (item.includes('KCL GRANULAR') || item.includes('SANTAGROW KCL') || item.includes('S.GROW KCL')) return { brandId: 'CP_KCL', volKgLtr: qty };
       if (item.includes('KUDA SAKTI')) return { brandId: 'CP_TSP', volKgLtr: qty };
 
       return { brandId: null, volKgLtr: qty };
@@ -957,7 +968,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         const row = rows[rIdx];
         if (!Array.isArray(row)) continue;
 
-        // Detect optional R2 Channel / Beneficiary / Line headers if present
         const rowUpper = row.map(v => String(v || '').trim().toUpperCase());
         if (rowUpper.some(h => h === 'NAMA PELANGGAN' || h === 'NO. FAKTUR' || h === 'CHANNEL' || h === 'R2 BENEFICIARY' || h === 'TOKO R2')) {
           rowUpper.forEach((h, idx) => {
@@ -985,7 +995,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           continue;
         }
 
-        // Single-value header row (Store Name or Category Header)
         if (nonEmpty.length === 1) {
           const v = nonEmpty[0].val;
           const vUp = v.toUpperCase();
@@ -998,12 +1007,10 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           continue;
         }
 
-        // Ignore subtotal/summary rows (e.g. only qty + amount without item name)
         if (nonEmpty.length <= 3 && nonEmpty.every(x => /^[\d.,\-\s]+$/.test(x.val) || validUnits.has(x.val.toUpperCase()))) {
           continue;
         }
 
-        // Detect Date in row
         let dateInfo = null;
         let dateIdx = -1;
         for (let i = 0; i < nonEmpty.length; i++) {
@@ -1015,7 +1022,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           }
         }
 
-        // Detect Unit (Satuan) in row
         let unitIdx = -1;
         let rawSatuan = 'KG';
         for (let i = 0; i < nonEmpty.length; i++) {
@@ -1027,7 +1033,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           }
         }
 
-        // Must have a product description (longest non-numeric text after date/invoice)
         let rawItem = '';
         let itemIdx = -1;
         const searchStart = dateIdx >= 0 ? dateIdx + 1 : 0;
@@ -1047,7 +1052,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         const rawItemUp = rawItem.toUpperCase();
         if (rawItemUp.startsWith('TOTAL ') || rawItemUp.startsWith('SUBTOTAL') || ignoredSingleVals.has(rawItemUp)) continue;
 
-        // Check if column 0 has Store Name (Accurate format where customer name repeats on every row)
         if (nonEmpty[0].col === 0 && dateIdx >= 1) {
           const c0 = nonEmpty[0].val.toUpperCase();
           if (!ignoredSingleVals.has(c0) && !/^\d{2}\.\d{2}\./.test(c0) && c0 !== rawItemUp) {
@@ -1057,7 +1061,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
 
         if (!currentStore) continue;
 
-        // Invoice number detection
         let noFaktur = '';
         for (let i = 0; i < (dateIdx >= 0 ? dateIdx : nonEmpty.length); i++) {
           const cand = nonEmpty[i].val;
@@ -1073,7 +1076,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         else if (lastValidDate) dateInfo = lastValidDate;
         else continue;
 
-        // Quantity detection (take the primary numeric column right after item or right before unit)
         let qty = 0;
         if (unitIdx > 0 && unitIdx - 1 !== itemIdx) {
           qty = cleanNumber(nonEmpty[unitIdx - 1].val);
@@ -1083,7 +1085,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         }
         if (qty === 0) continue;
 
-        // Amount Rp detection (numeric value after unit)
         let amountRp = 0;
         const amtStart = unitIdx >= 0 ? unitIdx + 1 : itemIdx + 2;
         for (let i = amtStart; i < nonEmpty.length; i++) {
@@ -1093,7 +1094,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           }
         }
 
-        // Salesperson detection (last non-numeric string)
         let sales = 'Tanpa Nama Sales';
         for (let i = nonEmpty.length - 1; i > itemIdx; i--) {
           const cand = nonEmpty[i].val;
@@ -1105,7 +1105,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
 
         const mapped = mapAccurateItemToNSEP(rawItem, rawSatuan, qty);
 
-        // Optional R2 Routing Columns
         let rawChannel = colMap.channel >= 0 ? String(row[colMap.channel] || '').trim().toUpperCase() : '';
         if (!rawChannel) {
           const viaCell = nonEmpty.find(x => x.val.toUpperCase() === 'VIA_R1' || x.val.toUpperCase() === 'VIA R1');
@@ -1148,14 +1147,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         let inQuotes = false;
         for (let i = 0; i < line.length; i++) {
           const ch = line[i];
-          if (ch === '"') {
-            inQuotes = !inQuotes;
-          } else if (ch === delim && !inQuotes) {
-            res.push(cur);
-            cur = '';
-          } else {
-            cur += ch;
-          }
+          if (ch === '"') inQuotes = !inQuotes;
+          else if (ch === delim && !inQuotes) { res.push(cur); cur = ''; }
+          else cur += ch;
         }
         res.push(cur);
         return res;
@@ -1188,7 +1182,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           if (firstRows && firstRows.length > 2) allTxs = await parseWithAiFallback(firstRows);
         }
       } catch (xlsErr) {
-        // Fallback if .xls is actually HTML table or tab-delimited text
         const text = new TextDecoder('utf-8').decode(buf);
         if (text.includes('<table') || text.includes('<tr')) {
           const doc = new DOMParser().parseFromString(text, 'text/html');
@@ -1253,14 +1246,22 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     // =========================================================================
     // 5. AGREGASI DATA PER TOKO & EVALUASI ATURAN PKS NSEP 2026
     // =========================================================================
+    function formatMonthYearList(monthSet) {
+      if (!monthSet || monthSet.size === 0) return '';
+      const arr = Array.from(monthSet).sort((a, b) => a - b);
+      return arr.map(ym => {
+        const y = Math.floor(ym / 100);
+        const m = ym % 100;
+        return `${MONTH_NAMES[m]} ${y}`;
+      }).join(', ');
+    }
+
     function rebuildAggregatedData() {
       const storeMap = new Map();
       const unmappedSet = new Set();
 
       for (const tx of state.rawTransactions) {
-        if (!tx.brandId) {
-          if (tx.rawItem) unmappedSet.add(tx.rawItem);
-        }
+        if (!tx.brandId && tx.rawItem) unmappedSet.add(tx.rawItem);
 
         if (!storeMap.has(tx.store)) {
           storeMap.set(tx.store, {
@@ -1269,22 +1270,32 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             vol2025: {},
             vol2026: {},
             volPre2026: {},
-            rp2026: {}
+            rp2026: {},
+            ym2025: {},
+            ym2026: {},
+            ymPre2026: {}
           });
         }
         const st = storeMap.get(tx.store);
         if (tx.sales && tx.sales !== 'TANPA NAMA SALES') st.salesSet.add(tx.sales);
 
         if (!tx.brandId) continue;
+        const ymKey = tx.year * 100 + tx.month;
 
         if (tx.year === 2025 && tx.month >= state.startMonth && tx.month <= state.endMonth) {
           st.vol2025[tx.brandId] = (st.vol2025[tx.brandId] || 0) + tx.volKgLtr;
+          if (!st.ym2025[tx.brandId]) st.ym2025[tx.brandId] = new Set();
+          st.ym2025[tx.brandId].add(ymKey);
         } else if (tx.year === 2026) {
           if (tx.month >= state.startMonth && tx.month <= state.endMonth) {
             st.vol2026[tx.brandId] = (st.vol2026[tx.brandId] || 0) + tx.volKgLtr;
             st.rp2026[tx.brandId] = (st.rp2026[tx.brandId] || 0) + tx.amountRp;
+            if (!st.ym2026[tx.brandId]) st.ym2026[tx.brandId] = new Set();
+            st.ym2026[tx.brandId].add(ymKey);
           } else if (tx.month < state.startMonth) {
             st.volPre2026[tx.brandId] = (st.volPre2026[tx.brandId] || 0) + tx.volKgLtr;
+            if (!st.ymPre2026[tx.brandId]) st.ymPre2026[tx.brandId] = new Set();
+            st.ymPre2026[tx.brandId].add(ymKey);
           }
         }
       }
@@ -1296,7 +1307,10 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           vol2025: st.vol2025,
           vol2026: st.vol2026,
           volPre2026: st.volPre2026,
-          rp2026: st.rp2026
+          rp2026: st.rp2026,
+          ym2025: st.ym2025,
+          ym2026: st.ym2026,
+          ymPre2026: st.ymPre2026
         }))
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -1332,6 +1346,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         const v26 = Number((store.vol2026[prod.id] || 0).toFixed(4));
         const vPre = Number((store.volPre2026[prod.id] || 0).toFixed(4));
         const rp26 = store.rp2026[prod.id] || 0;
+        const dates25Label = formatMonthYearList(store.ym2025?.[prod.id]);
+        const dates26Label = formatMonthYearList(store.ym2026?.[prod.id]);
+        const datesPreLabel = formatMonthYearList(store.ymPre2026?.[prod.id]);
         const growthVol = Number((v26 - v25).toFixed(4));
         const hasPurchased = v26 > 0;
 
@@ -1370,7 +1387,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
 
           if (achievedStrata) {
             baselineRp = v26 * baselineRate;
-            // Growth Incentive R1: cair jika vol26 >= 115% vol25, cap 50% dari vol25
             if (v25 > 0 && v26 >= v25 * 1.15) {
               const eligibleGrowthVol = Math.min(v26 - v25, v25 * 0.5);
               growthRp = eligibleGrowthVol * (r1.growth || 0);
@@ -1407,6 +1423,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             vol26: v26,
             target: nextTarget,
             targetLabel: nextLabel,
+            datesLabel: dates26Label,
             gap: Number((nextTarget - v26).toFixed(2))
           });
         }
@@ -1419,6 +1436,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           vol25: v25,
           vol26: v26,
           volPre: vPre,
+          dates25Label,
+          dates26Label,
+          datesPreLabel,
           rp26,
           growthVol,
           hasPurchased,
@@ -1433,7 +1453,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         });
       }
 
-      // Count active portfolio brands (for R2, Strategic Platform is excluded from R2 portfolio count)
       const activeForTier = productRows.filter(r => r.hasPurchased && (tier === 'R1' || r.portfolio !== 'Strategic Platform'));
       const pbCount = activeForTier.filter(r => r.portfolio === 'Power Brand').length;
       const spCount = activeForTier.filter(r => r.portfolio === 'Strategic Platform').length;
@@ -1448,7 +1467,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const hasEnoughPortfolio = hasAllPB && spCount >= minSP && cpCount >= minCP && totalBrands >= minTotalBrands;
       const strataBrandsCount = productRows.filter(r => r.achievedStrata).length;
 
-      // Blind Bonus R1 (>= 4 brands achieve strata)
       let totalBlindRp = 0;
       if (tier === 'R1' && strataBrandsCount >= 4) {
         for (const r of productRows) {
@@ -1460,7 +1478,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const totalGrowthRp = productRows.reduce((acc, r) => acc + r.growthRp, 0);
       const totalNsepSalesRp = productRows.reduce((acc, r) => acc + r.rp26, 0);
 
-      // League Ranking Bonus
       let leagueName = 'Belum Masuk';
       let leagueRp = 0;
       if (tier === 'R1') {
@@ -1515,15 +1532,19 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     }
 
     // =========================================================================
-    // 6. UI RENDERING (SIDEBAR, KPI, LIST, DETAIL, EXPORT WA & EXCEL)
+    // 6. UI RENDERING (MOBILE-FIRST + DESKTOP, CHECKLIST & BULAN/TAHUN)
     // =========================================================================
     function syncUIControls() {
       const hasData = state.stores.length > 0;
-      document.getElementById('sidebarStoreBadge').textContent = state.stores.length;
+      const badge = document.getElementById('sidebarStoreBadge');
+      if (badge) badge.textContent = state.stores.length;
       document.getElementById('periodSelectorBox').classList.toggle('hidden', !hasData);
       document.getElementById('periodSelectorBox').classList.toggle('flex', hasData);
-      document.getElementById('btnExportExcel').classList.toggle('hidden', !hasData);
-      document.getElementById('btnExportExcel').classList.toggle('inline-flex', hasData);
+      const btnEx = document.getElementById('btnExportExcel');
+      if (btnEx) {
+        btnEx.classList.toggle('hidden', !hasData);
+        btnEx.classList.toggle('inline-flex', hasData);
+      }
       document.getElementById('btnMergeInputCard').classList.toggle('hidden', !hasData);
 
       const dot = document.getElementById('sidebarStatusDot');
@@ -1531,9 +1552,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const banner = document.getElementById('loadedFileBannerInput');
 
       if (hasData) {
-        dot.className = 'mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0';
+        if (dot) dot.className = 'mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0';
         const infoText = `File: ${state.loadedFiles.join(', ')} • Update: ${state.lastUpdated} • Total: ${state.stores.length} Kios`;
-        summary.textContent = infoText;
+        if (summary) summary.textContent = infoText;
         document.getElementById('loadedFileInfo').textContent = infoText;
         banner.classList.remove('hidden');
 
@@ -1555,20 +1576,19 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         renderStoreList();
         if (state.selectedStore) renderStoreDetail(state.selectedStore);
       } else {
-        dot.className = 'mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-slate-300 shrink-0';
-        summary.textContent = 'Belum ada file di-upload. Silakan masukkan file Excel/CSV.';
+        if (dot) dot.className = 'mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-slate-300 shrink-0';
+        if (summary) summary.textContent = 'Belum ada file di-upload. Silakan masukkan file Excel/CSV.';
         banner.classList.add('hidden');
       }
 
-      // Sync Default Tier buttons
       const btnR1 = document.getElementById('btnTierR1');
       const btnR2 = document.getElementById('btnTierR2');
       if (state.defaultTier === 'R1') {
-        btnR1.className = 'btn-motion px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
-        btnR2.className = 'btn-motion px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white';
+        btnR1.className = 'flex-1 btn-motion px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
+        btnR2.className = 'flex-1 btn-motion px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all text-slate-700 dark:text-slate-300';
       } else {
-        btnR2.className = 'btn-motion px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
-        btnR1.className = 'btn-motion px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white';
+        btnR2.className = 'flex-1 btn-motion px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all bg-red-600 text-white shadow-sm';
+        btnR1.className = 'flex-1 btn-motion px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all text-slate-700 dark:text-slate-300';
       }
     }
 
@@ -1602,10 +1622,46 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       document.getElementById('kpiTotalIncentive').textContent = state.showIncentive ? formatRupiah(totalRp) : '••••••••';
     }
 
+    function setParticipationFilter(mode) {
+      state.participationFilter = mode;
+      listRenderLimit = 60;
+      document.querySelectorAll('.part-filter-btn').forEach(btn => {
+        const isAct = btn.getAttribute('data-part') === mode;
+        btn.className = isAct
+          ? 'btn-motion part-filter-btn py-1.5 px-1.5 rounded-xl text-[11px] font-extrabold bg-red-600 text-white shadow-2xs'
+          : 'btn-motion part-filter-btn py-1.5 px-1.5 rounded-xl text-[11px] font-extrabold text-slate-700 dark:text-slate-300';
+      });
+      renderStoreList();
+    }
+
+    function toggleStoreParticipation(event, storeName) {
+      event.stopPropagation();
+      const current = getStoreTier(storeName);
+      const next = current === 'NON' ? state.defaultTier : 'NON';
+      setStoreTier(storeName, next);
+      showToast(next === 'NON' ? `${storeName} ditandai Non-Program.` : `${storeName} dicentang sebagai Peserta ${next}.`, next === 'NON' ? 'bg-slate-300' : 'bg-emerald-400');
+    }
+
+    function bulkToggleProgramParticipation(isParticipate) {
+      if (state.stores.length === 0) {
+        showToast('Upload data toko terlebih dahulu.', 'bg-amber-400');
+        return;
+      }
+      for (const st of state.stores) {
+        state.storeTiers[st.name] = isParticipate ? state.defaultTier : 'NON';
+      }
+      evalCache.clear();
+      saveStateToStorage();
+      syncUIControls();
+      showToast(isParticipate ? `Semua ${state.stores.length} toko dicentang ikut ${state.defaultTier}.` : 'Semua ceklist dikosongkan (Non-Program). Silakan centang kios peserta.', 'bg-emerald-400');
+    }
+
     function getFilteredStores() {
       const q = state.searchQuery.toLowerCase().trim();
       return state.stores.filter(st => {
         const ev = getEvaluatedStore(st);
+        if (state.participationFilter === 'PROGRAM_ONLY' && ev.tier === 'NON') return false;
+        if (state.participationFilter === 'NON_ONLY' && ev.tier !== 'NON') return false;
         if (state.statusFilter !== 'ALL' && ev.statusCategory !== state.statusFilter) return false;
         if (state.salesFilter !== 'ALL' && !st.salesList.includes(state.salesFilter)) return false;
         if (q) {
@@ -1623,7 +1679,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         state.searchQuery = val;
         listRenderLimit = 60;
         renderStoreList();
-      }, 120);
+      }, 100);
     }
 
     function setStatusFilter(cat) {
@@ -1632,8 +1688,8 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       document.querySelectorAll('.status-filter-btn').forEach(btn => {
         const isAct = btn.getAttribute('data-filter') === cat;
         btn.className = isAct
-          ? 'btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-red-600 text-white shadow-2xs'
-          : 'btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700';
+          ? 'btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-red-600 text-white shadow-2xs shrink-0'
+          : 'btn-motion status-filter-btn px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0';
       });
       renderStoreList();
     }
@@ -1663,24 +1719,31 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       let html = slice.map(st => {
         const ev = getEvaluatedStore(st);
         const isSelected = state.selectedStore === st.name;
+        const isChecked = ev.tier !== 'NON';
         let badge = '';
-        if (ev.tier === 'NON') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">NON</span>`;
-        else if (ev.statusCategory === 'ELIGIBLE') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">✅ Lolos</span>`;
-        else if (ev.statusCategory === 'VOL_PENDING') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">⚠️ Vol Kurang</span>`;
-        else if (ev.statusCategory === 'MISSING_PB') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300">🚨 Kurang PB</span>`;
-        else badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300">❌ Kurang Merek</span>`;
+        if (ev.tier === 'NON') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">NON</span>`;
+        else if (ev.statusCategory === 'ELIGIBLE') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 shrink-0">✅ Lolos</span>`;
+        else if (ev.statusCategory === 'VOL_PENDING') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 shrink-0">⚠️ Vol Kurang</span>`;
+        else if (ev.statusCategory === 'MISSING_PB') badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 shrink-0">🚨 Kurang PB</span>`;
+        else badge = `<span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 shrink-0">❌ Kurang Merek</span>`;
 
         return `
-          <button onclick="selectStore('${escapeAttr(st.name)}')" class="w-full text-left p-4 transition-colors flex flex-col gap-1.5 ${isSelected ? 'bg-red-50/90 dark:bg-red-950/30 border-l-4 border-l-red-600' : 'hover:bg-stone-50 dark:hover:bg-slate-800/60'}">
-            <div class="flex items-start justify-between gap-2">
-              <span class="font-black text-sm text-slate-900 dark:text-white leading-snug">${escapeHtml(st.name)}</span>
-              ${badge}
+          <div onclick="selectStore('${escapeAttr(st.name)}', true)" class="cursor-pointer w-full text-left p-3.5 sm:p-4 transition-colors flex items-start gap-3 ${isSelected ? 'bg-red-50/90 dark:bg-red-950/30 border-l-4 border-l-red-600' : 'hover:bg-stone-50 dark:hover:bg-slate-800/60'} ${!isChecked ? 'opacity-65' : ''}">
+            <input type="checkbox" ${isChecked ? 'checked' : ''}
+                   onclick="toggleStoreParticipation(event, '${escapeAttr(st.name)}')"
+                   title="Centang jika kios ini ikut program NSEP 2026"
+                   class="mt-1 w-5 h-5 rounded-md accent-red-600 cursor-pointer shrink-0" />
+            <div class="flex-1 min-w-0 flex flex-col gap-1">
+              <div class="flex items-start justify-between gap-2">
+                <span class="font-black text-sm text-slate-900 dark:text-white leading-snug">${escapeHtml(st.name)}</span>
+                ${badge}
+              </div>
+              <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                <span>${isChecked ? `${ev.tier} • ${ev.totalBrands}/${ev.minTotalBrands} Merek` : 'Tidak Ikut Program'}</span>
+                <span class="truncate max-w-[125px]">${escapeHtml(st.salesList[0] || '-')}</span>
+              </div>
             </div>
-            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              <span>${ev.tier} • ${ev.totalBrands}/${ev.minTotalBrands} Merek</span>
-              <span class="truncate max-w-[140px]">${escapeHtml(st.salesList[0] || '-')}</span>
-            </div>
-          </button>
+          </div>
         `;
       }).join('');
 
@@ -1690,10 +1753,19 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       container.innerHTML = html;
     }
 
-    function selectStore(storeName) {
+    function selectStore(storeName, autoScrollMobile = false) {
       state.selectedStore = storeName;
       renderStoreList();
       renderStoreDetail(storeName);
+      if (autoScrollMobile && window.innerWidth < 1280) {
+        const detailEl = document.getElementById('storeDetailPanel');
+        if (detailEl) detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function scrollBackToStoreList() {
+      const listEl = document.getElementById('storeListSection');
+      if (listEl) listEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function navigateStore(delta) {
@@ -1701,7 +1773,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       if (filtered.length === 0) return;
       const idx = filtered.findIndex(s => s.name === state.selectedStore);
       const nextIdx = idx < 0 ? 0 : (idx + delta + filtered.length) % filtered.length;
-      selectStore(filtered[nextIdx].name);
+      selectStore(filtered[nextIdx].name, false);
     }
 
     function setStoreTier(storeName, tier) {
@@ -1721,7 +1793,6 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       const ev = getEvaluatedStore(store);
       const periodLabel = `${MONTH_NAMES[state.startMonth]}–${MONTH_NAMES[state.endMonth]}`;
 
-      // Build missing / warning alerts
       const missingAlerts = [];
       if (ev.tier !== 'NON') {
         if (!ev.hasAllPB) {
@@ -1738,23 +1809,35 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
         }
       }
 
-      const activeRows = ev.productRows.filter(r => r.vol26 > 0 || r.vol25 > 0 || r.portfolio === 'Power Brand');
+      const activeRows = ev.productRows.filter(r => r.vol26 > 0 || r.vol25 > 0 || r.volPre > 0 || r.portfolio === 'Power Brand');
 
       panel.innerHTML = `
-        <div class="space-y-6 animate-panel-enter">
+        <div class="space-y-5 animate-panel-enter">
+          <!-- Mobile Back-to-List Bar -->
+          <div class="xl:hidden flex items-center justify-between pb-2 border-b border-stone-200 dark:border-slate-800">
+            <button onclick="scrollBackToStoreList()" class="btn-motion inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-200">
+              <span>⬆️ Daftar Kios</span>
+            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="navigateStore(-1)" class="btn-motion px-2.5 py-1.5 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs font-extrabold">⬅️</button>
+              <button onclick="navigateStore(1)" class="btn-motion px-2.5 py-1.5 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs font-extrabold">➡️</button>
+            </div>
+          </div>
+
           <!-- Store Header & Action Bar -->
-          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 pb-5 border-b border-stone-200 dark:border-slate-800">
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 pb-4 border-b border-stone-200 dark:border-slate-800">
             <div>
-              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+              <div class="hidden xl:flex items-center gap-2 flex-wrap mb-1.5">
                 <button onclick="navigateStore(-1)" class="btn-motion px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300">⬅️ Sebelumnya</button>
                 <button onclick="navigateStore(1)" class="btn-motion px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300">Selanjutnya ➡️</button>
                 <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Sales: ${escapeHtml(store.salesList.join(', ') || '-')}</span>
               </div>
-              <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">${escapeHtml(store.name)}</h2>
+              <h2 class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white leading-snug">${escapeHtml(store.name)}</h2>
+              <p class="xl:hidden text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">Sales: ${escapeHtml(store.salesList.join(', ') || '-')}</p>
 
               <!-- Tier Switcher Per Kios -->
-              <div class="mt-3 flex flex-wrap items-center gap-2">
-                <span class="text-xs font-extrabold text-slate-500 dark:text-slate-400">Status Kios:</span>
+              <div class="mt-3 flex flex-wrap items-center gap-1.5">
+                <span class="text-xs font-extrabold text-slate-500 dark:text-slate-400 mr-1">Status:</span>
                 ${['R1', 'R2', 'NON'].map(t => `
                   <button onclick="setStoreTier('${escapeAttr(store.name)}', '${t}')" class="btn-motion px-3 py-1 rounded-xl text-xs font-extrabold border ${ev.tier === t ? 'bg-red-600 text-white border-red-600' : 'bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-stone-300 dark:border-slate-700'}">
                     ${t === 'R1' ? 'Peserta R-1' : (t === 'R2' ? 'Peserta R-2' : 'Non-Program')}
@@ -1764,15 +1847,15 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-wrap gap-2 shrink-0">
-              <button onclick="copyWhatsAppReport('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">
-                <span>📲 Copy Laporan WA</span>
+            <div class="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 shrink-0">
+              <button onclick="copyWhatsAppReport('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">
+                <span>📲 Copy WA</span>
               </button>
-              <button onclick="exportSingleStoreExcel('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs sm:text-sm font-extrabold shadow-sm">
-                <span>📥 Excel Kios Ini</span>
+              <button onclick="exportSingleStoreExcel('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs sm:text-sm font-extrabold shadow-sm">
+                <span>📥 Excel</span>
               </button>
-              <button onclick="analyzeStoreWithAI('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">
-                <span>✨ Saran AI</span>
+              <button onclick="analyzeStoreWithAI('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">
+                <span>✨ AI</span>
               </button>
             </div>
           </div>
@@ -1785,29 +1868,29 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
 
           <!-- Portfolio Checklist Summary -->
           ${ev.tier !== 'NON' ? `
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="p-3.5 rounded-2xl border ${ev.pbCount >= 2 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}">
-              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Power Brand</div>
-              <div class="text-xl font-black mt-0.5 ${ev.pbCount >= 2 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">${ev.pbCount} / 2 Merek</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div class="p-3 rounded-2xl border ${ev.pbCount >= 2 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}">
+              <div class="text-[11px] sm:text-xs font-extrabold text-slate-600 dark:text-slate-300">Power Brand</div>
+              <div class="text-lg sm:text-xl font-black mt-0.5 ${ev.pbCount >= 2 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">${ev.pbCount} / 2 Merek</div>
             </div>
             ${ev.tier === 'R1' ? `
-            <div class="p-3.5 rounded-2xl border ${ev.spCount >= 3 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'}">
-              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Strategic Platform</div>
-              <div class="text-xl font-black mt-0.5 ${ev.spCount >= 3 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">${ev.spCount} / 3 Merek</div>
+            <div class="p-3 rounded-2xl border ${ev.spCount >= 3 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'}">
+              <div class="text-[11px] sm:text-xs font-extrabold text-slate-600 dark:text-slate-300">Strategic Platform</div>
+              <div class="text-lg sm:text-xl font-black mt-0.5 ${ev.spCount >= 3 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">${ev.spCount} / 3 Merek</div>
             </div>` : ''}
-            <div class="p-3.5 rounded-2xl border ${ev.cpCount >= ev.minCP ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'}">
-              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Core Portfolio</div>
-              <div class="text-xl font-black mt-0.5 ${ev.cpCount >= ev.minCP ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">${ev.cpCount} / ${ev.minCP} Merek</div>
+            <div class="p-3 rounded-2xl border ${ev.cpCount >= ev.minCP ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'}">
+              <div class="text-[11px] sm:text-xs font-extrabold text-slate-600 dark:text-slate-300">Core Portfolio</div>
+              <div class="text-lg sm:text-xl font-black mt-0.5 ${ev.cpCount >= ev.minCP ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">${ev.cpCount} / ${ev.minCP} Merek</div>
             </div>
-            <div class="p-3.5 rounded-2xl border ${ev.totalBrands >= ev.minTotalBrands ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'}">
-              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Total Merek NSEP</div>
-              <div class="text-xl font-black mt-0.5 ${ev.totalBrands >= ev.minTotalBrands ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}">${ev.totalBrands} / ${ev.minTotalBrands} Merek</div>
+            <div class="p-3 rounded-2xl border ${ev.totalBrands >= ev.minTotalBrands ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-orange-50/70 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'}">
+              <div class="text-[11px] sm:text-xs font-extrabold text-slate-600 dark:text-slate-300">Total Merek NSEP</div>
+              <div class="text-lg sm:text-xl font-black mt-0.5 ${ev.totalBrands >= ev.minTotalBrands ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}">${ev.totalBrands} / ${ev.minTotalBrands} Merek</div>
             </div>
           </div>` : ''}
 
-          <!-- Diagnosis Box: Apa yang Kurang & Peluang Nanggung Target -->
+          <!-- Diagnosis Box: Kurang Syarat & Nanggung Target (dengan Bulan & Tahun) -->
           ${(missingAlerts.length > 0 || ev.nearMisses.length > 0) ? `
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div class="bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-2xl p-4 space-y-2">
               <div class="text-xs font-black uppercase tracking-wider text-rose-800 dark:text-rose-300">📌 Kekurangan Syarat Portofolio</div>
               ${missingAlerts.length > 0
@@ -1818,16 +1901,19 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             <div class="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 space-y-2">
               <div class="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">⏳ Sudah Diambil Tapi Belum Capai Target</div>
               ${ev.nearMisses.length > 0
-                ? `<ul class="space-y-1.5 text-xs sm:text-sm text-amber-950 dark:text-amber-100">${ev.nearMisses.slice(0, 6).map(nm => `
-                    <li class="flex items-center justify-between gap-2">
-                      <span><b>${escapeHtml(nm.name)}</b> (${formatNum(nm.vol26)} ${nm.unit})</span>
+                ? `<ul class="space-y-2 text-xs sm:text-sm text-amber-950 dark:text-amber-100">${ev.nearMisses.slice(0, 6).map(nm => `
+                    <li class="flex items-start justify-between gap-2">
+                      <div>
+                        <b>${escapeHtml(nm.name)}</b> (${formatNum(nm.vol26)} ${nm.unit})
+                        ${nm.datesLabel ? `<span class="block text-[11px] font-semibold text-amber-800/80 dark:text-amber-300/80">📅 Ambil: ${escapeHtml(nm.datesLabel)}</span>` : ''}
+                      </div>
                       <span class="px-2 py-0.5 rounded-lg bg-amber-200/80 dark:bg-amber-900 text-amber-950 dark:text-amber-100 font-extrabold text-xs shrink-0">Kurang ${formatNum(nm.gap)} ${nm.unit}</span>
                     </li>`).join('')}</ul>`
                 : `<p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300">Tidak ada produk nanggung target saat ini.</p>`}
             </div>
           </div>` : ''}
 
-          <!-- Internal Incentive Breakdown (Only Visible When Mode Internal Active) -->
+          <!-- Internal Incentive Breakdown -->
           ${state.showIncentive && ev.tier !== 'NON' ? `
           <div class="bg-slate-900 text-white rounded-2xl p-4 border border-slate-700 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
             <div><span class="text-slate-400 block">Baseline</span><b class="text-sm">${formatRupiah(ev.totalBaselineRp)}</b></div>
@@ -1837,15 +1923,53 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
             <div><span class="text-amber-400 block">Total Sah</span><b class="text-base text-amber-300">${formatRupiah(ev.finalIncentiveRp)}</b></div>
           </div>` : ''}
 
-          <!-- Product Performance Table -->
-          <div class="overflow-x-auto rounded-2xl border border-stone-200 dark:border-slate-800">
+          <!-- MOBILE CARD VIEW (< 640px): Nyaman dibaca Bapak & Ibu di HP tanpa geser tabel -->
+          <div class="sm:hidden space-y-2.5">
+            <div class="text-xs font-black uppercase tracking-wider text-slate-400 px-1">Rincian Produk & Bulan Ambil</div>
+            ${activeRows.map(r => {
+              const statusBadge = r.achievedStrata
+                ? `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">✅ ${r.strataLabel}</span>`
+                : (r.hasPurchased
+                  ? `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">⏳ ${r.nextTarget ? `Kurang ${formatNum(r.nextTarget - r.vol26)} ${r.unit}` : r.strataLabel}</span>`
+                  : `<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300">❌ Wajib Ambil</span>`);
+
+              return `
+                <div class="p-3.5 rounded-2xl border border-stone-200 dark:border-slate-800 bg-stone-50/70 dark:bg-slate-800/40 space-y-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${r.portfolio}</span>
+                      <div class="font-black text-sm text-slate-900 dark:text-white">${escapeHtml(r.name)}</div>
+                    </div>
+                    ${statusBadge}
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 pt-1.5 border-t border-stone-200/80 dark:border-slate-700/80 text-xs">
+                    <div>
+                      <span class="text-[11px] text-slate-500 dark:text-slate-400 block">${periodLabel} 2025:</span>
+                      <b class="font-mono text-slate-700 dark:text-slate-200">${formatNum(r.vol25)} ${r.unit}</b>
+                      ${r.dates25Label ? `<span class="block text-[10px] text-slate-500 dark:text-slate-400">📅 ${escapeHtml(r.dates25Label)}</span>` : ''}
+                    </div>
+                    <div>
+                      <span class="text-[11px] text-slate-500 dark:text-slate-400 block">${periodLabel} 2026:</span>
+                      <b class="font-mono text-slate-900 dark:text-white">${formatNum(r.vol26)} ${r.unit}</b>
+                      ${r.dates26Label ? `<span class="block text-[10px] font-bold text-red-700 dark:text-red-400">📅 ${escapeHtml(r.dates26Label)}</span>` : ''}
+                      ${r.volPre > 0 ? `<span class="block text-[10px] text-slate-400">+${formatNum(r.volPre)} (${escapeHtml(r.datesPreLabel || 'Pra-Program')})</span>` : ''}
+                    </div>
+                  </div>
+                  ${state.showIncentive ? `<div class="text-right text-xs font-extrabold text-emerald-700 dark:text-emerald-400 pt-1">Est: ${formatRupiah(r.baselineRp + r.growthRp)}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- DESKTOP TABLE VIEW (>= 640px) -->
+          <div class="hidden sm:block overflow-x-auto rounded-2xl border border-stone-200 dark:border-slate-800">
             <table class="w-full text-left border-collapse text-xs sm:text-sm">
               <thead>
                 <tr class="bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-b border-stone-200 dark:border-slate-700">
                   <th class="py-3 px-3.5 font-extrabold">Portofolio</th>
                   <th class="py-3 px-3.5 font-extrabold">Merek Produk NSEP</th>
                   <th class="py-3 px-3.5 font-extrabold text-right">${periodLabel} 2025</th>
-                  <th class="py-3 px-3.5 font-extrabold text-right">${periodLabel} 2026</th>
+                  <th class="py-3 px-3.5 font-extrabold text-right">${periodLabel} 2026 & Bulan Ambil</th>
                   <th class="py-3 px-3.5 font-extrabold text-center">Status Target</th>
                   ${state.showIncentive ? `<th class="py-3 px-3.5 font-extrabold text-right">Est. Insentif</th>` : ''}
                 </tr>
@@ -1862,10 +1986,14 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
                     <tr class="hover:bg-stone-50 dark:hover:bg-slate-800/40">
                       <td class="py-3 px-3.5 text-xs font-bold text-slate-500 dark:text-slate-400">${r.portfolio}</td>
                       <td class="py-3 px-3.5 font-extrabold text-slate-900 dark:text-white">${escapeHtml(r.name)}</td>
-                      <td class="py-3 px-3.5 text-right font-mono text-slate-600 dark:text-slate-300">${formatNum(r.vol25)} ${r.unit}</td>
+                      <td class="py-3 px-3.5 text-right font-mono text-slate-600 dark:text-slate-300">
+                        <div>${formatNum(r.vol25)} ${r.unit}</div>
+                        ${r.dates25Label ? `<div class="font-sans text-[11px] text-slate-400">📅 ${escapeHtml(r.dates25Label)}</div>` : ''}
+                      </td>
                       <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900 dark:text-white">
-                        ${formatNum(r.vol26)} ${r.unit}
-                        ${r.volPre > 0 ? `<span class="block text-[10px] font-normal text-slate-400">+${formatNum(r.volPre)} pra-program</span>` : ''}
+                        <div>${formatNum(r.vol26)} ${r.unit}</div>
+                        ${r.dates26Label ? `<div class="font-sans text-[11px] font-semibold text-red-700 dark:text-red-400">📅 ${escapeHtml(r.dates26Label)}</div>` : ''}
+                        ${r.volPre > 0 ? `<div class="font-sans text-[10px] font-normal text-slate-400">+${formatNum(r.volPre)} (${escapeHtml(r.datesPreLabel || 'Pra-Program')})</div>` : ''}
                       </td>
                       <td class="py-3 px-3.5 text-center">${statusBadge}</td>
                       ${state.showIncentive ? `<td class="py-3 px-3.5 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">${formatRupiah(r.baselineRp + r.growthRp)}</td>` : ''}
@@ -1887,13 +2015,17 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
 
       const achievedLines = ev.productRows
         .filter(r => r.achievedStrata)
-        .map(r => `• ${r.name}: *${formatNum(r.vol26)} ${r.unit}* (${r.strataLabel})`);
+        .map(r => {
+          const bln = r.dates26Label ? ` [${r.dates26Label}]` : '';
+          return `• ${r.name}: *${formatNum(r.vol26)} ${r.unit}* (${r.strataLabel})${bln}`;
+        });
 
       const unachievedLines = ev.productRows
         .filter(r => r.hasPurchased && !r.achievedStrata)
         .map(r => {
+          const bln = r.dates26Label ? ` [${r.dates26Label}]` : '';
           const gapTxt = r.nextTarget ? `kurang *${formatNum(r.nextTarget - r.vol26)} ${r.unit}* ke ${r.nextLabel}` : r.strataLabel;
-          return `• ${r.name}: baru *${formatNum(r.vol26)} ${r.unit}* (${gapTxt})`;
+          return `• ${r.name}: baru *${formatNum(r.vol26)} ${r.unit}*${bln} (${gapTxt})`;
         });
 
       const missingLines = [];
@@ -1929,7 +2061,7 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      showToast('Laporan WA berhasil disalin! Siap paste ke WhatsApp.', 'bg-emerald-400');
+      showToast('Laporan WA (lengkap dengan bulan & tahun) berhasil disalin!', 'bg-emerald-400');
     }
 
     function exportSingleStoreExcel(storeName) {
@@ -1957,7 +2089,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
           'Merek Produk NSEP': r.name,
           'Satuan': r.unit,
           'Capaian 2025': r.vol25,
+          'Bulan Ambil 2025': r.dates25Label || '-',
           'Capaian 2026': r.vol26,
+          'Bulan Ambil 2026': r.dates26Label || '-',
           'Selisih Growth': r.growthVol,
           'Status Target': r.strataLabel,
           'Kurang Ke Target Berikutnya': (!r.achievedStrata && r.nextTarget) ? Math.max(0, r.nextTarget - r.vol26) : 0
@@ -1974,7 +2108,10 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     }
 
     function exportToExcel() {
-      if (state.stores.length === 0) return;
+      if (state.stores.length === 0) {
+        showToast('Belum ada data toko untuk di-download.', 'bg-amber-400');
+        return;
+      }
       const wb = XLSX.utils.book_new();
       const summaryRows = [];
       const detailRows = [];
@@ -2005,7 +2142,9 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
               'Merek Produk': r.name,
               'Satuan': r.unit,
               'Vol 2025': r.vol25,
+              'Bulan Ambil 2025': r.dates25Label || '-',
               'Vol 2026': r.vol26,
+              'Bulan Ambil 2026': r.dates26Label || '-',
               'Growth': r.growthVol,
               'Status': r.strataLabel
             };
@@ -2159,13 +2298,12 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
     function showToast(msg, bgClass = 'bg-emerald-400') {
       const el = document.getElementById('toastNotification');
       el.textContent = msg;
-      el.className = `fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl text-slate-950 font-extrabold text-sm shadow-2xl transition-all ${bgClass}`;
+      el.className = `fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 px-4 py-3 rounded-2xl text-slate-950 font-extrabold text-xs sm:text-sm shadow-2xl transition-all ${bgClass}`;
       el.classList.remove('hidden');
       clearTimeout(window._toastTimer);
       window._toastTimer = setTimeout(() => el.classList.add('hidden'), 3200);
     }
 
-    // Scroll progress bar & button ripple motion
     window.addEventListener('scroll', () => {
       const docH = document.documentElement.scrollHeight - document.documentElement.clientHeight;
       const pct = docH > 0 ? (window.scrollY / docH) * 100 : 0;
