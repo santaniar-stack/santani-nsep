@@ -919,51 +919,38 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
             const text = new TextDecoder('utf-8').decode(buffer);
             const firstLines = text.split(/\r?\n/).slice(0, 10).join('\n');
             const delimiter = (firstLines.match(/;/g) || []).length >= (firstLines.match(/,/g) || []).length ? ';' : ',';
-            const wb = XLSX.read(text, { type: 'string', FS: delimiter });
+            const wb = XLSX.read(text, { type: 'string', FS: delimiter, raw: false });
             const sheet = wb.Sheets[wb.SheetNames[0]];
-            rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
           } else {
-            const wb = XLSX.read(buffer, { type: 'array' });
+            const wb = XLSX.read(buffer, { type: 'array', cellDates: false });
             for (const sName of wb.SheetNames) {
               const sheet = wb.Sheets[sName];
-              const sRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+              const sRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
               if (sRows && sRows.length > 3) {
                 rows = rows.concat(sRows);
               }
             }
           }
 
-          let parsedTx = parseAccurateRows(rows, file.name);
-          if (parsedTx.length === 0 && rows.length > 2) {
-            parsedTx = await parseWithAiFallback(rows);
+          let txList = parseAccurateRows(rows, file.name);
+          if (txList.length === 0 && rows.length > 2) {
+            txList = await parseWithAiFallback(rows);
           }
-          allNewTx = allNewTx.concat(parsedTx);
+          allNewTx = allNewTx.concat(txList);
         }
 
         if (allNewTx.length === 0) {
-          showToast('File terbaca, namun tidak ditemukan baris transaksi penjualan valid.', 'bg-rose-300');
+          showToast('Tidak ditemukan transaksi valid. Cek format file atau isi API Key Asisten AI.', 'bg-rose-400');
           return;
         }
 
         if (isMergeMode && state.rawTransactions.length > 0) {
-          const existingKeys = new Set(
-            state.rawTransactions.map(t => `${t.store}|${t.noFaktur}|${t.year}-${t.month}|${t.rawItem}|${t.volKgLtr}|${t.amountRp}`)
-          );
-          let addedCount = 0;
-          allNewTx.forEach(t => {
-            const key = `${t.store}|${t.noFaktur}|${t.year}-${t.month}|${t.rawItem}|${t.volKgLtr}|${t.amountRp}`;
-            if (!t.noFaktur || !existingKeys.has(key)) {
-              state.rawTransactions.push(t);
-              if (t.noFaktur) existingKeys.add(key);
-              addedCount++;
-            }
-          });
-          state.fileName = `${state.fileName} + ${fileNames.join(', ')}`;
-          showToast(`Berhasil menggabungkan +${addedCount} transaksi baru!`, 'bg-emerald-300');
+          state.rawTransactions = deduplicateTransactions([...state.rawTransactions, ...allNewTx]);
+          state.fileName = `Gabungan (${fileNames.length} file ditambah)`;
         } else {
-          state.rawTransactions = allNewTx;
-          state.fileName = fileNames.join(', ');
-          showToast(`Berhasil memuat ${allNewTx.length} baris transaksi!`, 'bg-emerald-300');
+          state.rawTransactions = deduplicateTransactions(allNewTx);
+          state.fileName = fileNames.length > 1 ? `${fileNames.length} File (${fileNames[0]}, ...)` : fileNames[0];
         }
 
         const now = new Date();
@@ -973,24 +960,41 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
         aggregateByStore(state.rawTransactions);
         saveStateToStorage();
         activateDashboardUI();
+        showToast(`Berhasil memuat ${state.stores.length} toko pelanggan!`, 'bg-emerald-400');
       } catch (err) {
-        console.error('Error parsing file:', err);
-        showToast('Gagal memproses file: ' + (err.message || 'Format tidak didukung'), 'bg-rose-300');
+        console.error(err);
+        showToast('Gagal memproses file: ' + err.message, 'bg-rose-400');
       }
     }
 
-    function parseAccurateRows(rows, sourceFileName = '') {
-      const transactions = [];
+    function deduplicateTransactions(txArray) {
+      const seen = new Set();
+      const result = [];
+      for (const tx of txArray) {
+        const key = `${tx.sourceFile}|${tx.rowIdx}|${tx.store}|${tx.noFaktur}|${tx.year}-${tx.month}|${tx.rawItem}|${tx.volKgLtr}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push(tx);
+        }
+      }
+      return result;
+    }
+
+    function parseAccurateRows(rows, sourceFile = 'Accurate') {
+      const categoryKeywords = new Set([
+        'PUPUK', 'PUPUK CAIR', 'FUNGISIDA', 'HERBISIDA', 'INSEKTISIDA',
+        'MOLUKUSIDA', 'MOLUSKISIDA', 'PESTISIDA', 'ZPT', 'PEREKAT',
+        'BENIH', 'BAKTERISIDA', 'AKARISIDA', 'RODENTISIDA', 'ALAT PERTANIAN',
+        'PLASTIK', 'POMPA', 'SPAREPART', 'EMULGATOR'
+      ]);
+      const headerKeywords = ['NO. FAKTUR', 'TGL FAKTUR', 'KETERANGAN BARANG', 'KUANTITAS', 'NAMA PELANGGAN', 'RINCIAN PENJUALAN'];
+      const knownUnits = new Set(['KG', 'LTR', 'L', 'BKS', 'BTL', 'DUS', 'PCH', 'JRC', 'JRG', 'PCS', 'SAK', 'ZAK', 'GRAM', 'GR', 'ML']);
+
       let currentStore = '';
       let lastKnownFaktur = '';
       let lastKnownDate = null;
       let lastKnownSales = '';
-
-      const categoryKeywords = new Set([
-        'PUPUK', 'PUPUK CAIR', 'FUNGISIDA', 'HERBISIDA', 'INSEKTISIDA',
-        'MOLUKUSIDA', 'MOLUSKISIDA', 'PESTISIDA', 'ZPT', 'RODENTISIDA',
-        'ALAT PERTANIAN', 'EMULGATOR', 'PLASTIK', 'POMPA', 'SPAREPART', 'PEREKAT', 'BENIH'
-      ]);
+      const transactions = [];
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -998,26 +1002,24 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
 
         const nonEmpty = [];
         for (let c = 0; c < row.length; c++) {
-          const val = String(row[c] ?? '').trim();
+          const val = String(row[c] === null || row[c] === undefined ? '' : row[c]).trim();
           if (val !== '') nonEmpty.push({ col: c, val });
         }
         if (nonEmpty.length === 0) continue;
 
-        const firstValUpper = nonEmpty[0].val.toUpperCase();
-        if (
-          firstValUpper.startsWith('RINCIAN PENJUALAN') ||
-          firstValUpper.startsWith('DARI ') ||
-          firstValUpper === 'NAMA PELANGGAN' ||
-          firstValUpper === 'NO. FAKTUR' ||
-          firstValUpper.startsWith('UNIT ')
-        ) {
-          continue;
-        }
+        const joinedUpper = nonEmpty.map(x => x.val.toUpperCase()).join(' ');
+        if (headerKeywords.some(h => joinedUpper.includes(h))) continue;
 
         if (nonEmpty.length === 1) {
           const single = nonEmpty[0].val;
           const singleUpper = single.toUpperCase();
-          if (!categoryKeywords.has(singleUpper) && !/^[\d.,\s-]+$/.test(single)) {
+          if (
+            !categoryKeywords.has(singleUpper) &&
+            !/^[\d.,\s-]+$/.test(single) &&
+            !singleUpper.startsWith('TOTAL') &&
+            !singleUpper.startsWith('SUBTOTAL') &&
+            !singleUpper.startsWith('GRAND TOTAL')
+          ) {
             currentStore = singleUpper;
             lastKnownFaktur = '';
             lastKnownDate = null;
@@ -1037,72 +1039,88 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
           }
         }
 
-        let rowStore = currentStore;
-        let rowFaktur = '';
-        let itemCandidate = '';
-        let qtyVal = 0;
-        let unitVal = 'KG';
-        let priceVal = 0;
-        let salesVal = '';
-
-        if (dateObj && datePos >= 1) {
+        if (dateObj) {
           lastKnownDate = dateObj;
-          if (datePos === 1) {
-            rowFaktur = nonEmpty[0].val;
-            lastKnownFaktur = rowFaktur;
-          } else if (datePos >= 2) {
-            const c0 = nonEmpty[0].val;
-            const c1 = nonEmpty[1].val;
-            if (!categoryKeywords.has(c0.toUpperCase()) && !/^\d{2}\.\d{2}/.test(c0)) {
-              rowStore = c0.toUpperCase();
-              currentStore = rowStore;
+          if (datePos >= 2) {
+            const candidateStore = nonEmpty[0].val.toUpperCase();
+            if (!categoryKeywords.has(candidateStore) && !/^\d{2}\.\d{2}\./.test(candidateStore) && !/^[\d.,\s-]+$/.test(candidateStore)) {
+              currentStore = candidateStore;
             }
-            rowFaktur = c1;
-            lastKnownFaktur = rowFaktur;
-          }
-
-          const afterDate = nonEmpty.slice(datePos + 1);
-          if (afterDate.length >= 2) {
-            itemCandidate = afterDate[0].val;
-            qtyVal = cleanNumber(afterDate[1].val);
-            if (afterDate.length >= 3) unitVal = afterDate[2].val.toUpperCase();
-            if (afterDate.length >= 4) priceVal = cleanNumber(afterDate[3].val);
-            if (afterDate.length >= 5) {
-              const sCand = afterDate[4].val.toUpperCase();
-              if (!categoryKeywords.has(sCand)) {
-                salesVal = sCand;
-                lastKnownSales = salesVal;
-              }
+            lastKnownFaktur = nonEmpty[datePos - 1].val;
+          } else if (datePos === 1) {
+            const firstVal = nonEmpty[0].val.toUpperCase();
+            if (/^\d{2}\.\d{2}\./.test(firstVal) || /^[A-Z0-9\-\/]+$/.test(firstVal) && firstVal.length <= 18) {
+              lastKnownFaktur = nonEmpty[0].val;
+            } else if (!categoryKeywords.has(firstVal)) {
+              currentStore = firstVal;
             }
           }
-        } else if (!dateObj && lastKnownDate && rowStore && nonEmpty.length >= 3) {
-          const firstStr = nonEmpty[0].val;
-          if (!/^[\d.,\s-]+$/.test(firstStr) && !categoryKeywords.has(firstStr.toUpperCase())) {
-            itemCandidate = firstStr;
-            qtyVal = cleanNumber(nonEmpty[1].val);
-            unitVal = (nonEmpty[2]?.val || 'KG').toUpperCase();
-            priceVal = cleanNumber(nonEmpty[3]?.val || 0);
-            rowFaktur = lastKnownFaktur;
-            dateObj = lastKnownDate;
-            salesVal = lastKnownSales;
+        } else {
+          if (!lastKnownDate || !currentStore) continue;
+          const firstVal = nonEmpty[0].val.toUpperCase();
+          if (firstVal === currentStore || /^\d{2}\.\d{2}\./.test(firstVal)) {
+            if (/^\d{2}\.\d{2}\./.test(firstVal)) lastKnownFaktur = nonEmpty[0].val;
+          } else if (nonEmpty.length < 3) {
+            continue;
           }
         }
 
-        if (!rowStore || !dateObj || !itemCandidate || qtyVal <= 0) continue;
+        if (!currentStore || !lastKnownDate) continue;
 
-        const mapped = mapAccurateItemToNSEP(itemCandidate, unitVal, qtyVal);
+        const startSearchIdx = datePos >= 0 ? datePos + 1 : 0;
+        let rawItem = '';
+        let itemPos = -1;
+        for (let idx = startSearchIdx; idx < nonEmpty.length; idx++) {
+          const v = nonEmpty[idx].val;
+          const vUp = v.toUpperCase();
+          if (vUp === currentStore || /^\d{2}\.\d{2}\./.test(vUp)) continue;
+          if (knownUnits.has(vUp)) continue;
+          if (/^[\d.,\s-]+$/.test(v)) continue;
+          if (v.length >= 3) {
+            rawItem = v;
+            itemPos = idx;
+            break;
+          }
+        }
+        if (!rawItem || itemPos === -1) continue;
+
+        let rawQty = 0;
+        let rawSatuan = 'KG';
+        let rawHarga = 0;
+        let salesName = lastKnownSales;
+
+        const afterItem = nonEmpty.slice(itemPos + 1);
+        const numericTokens = [];
+        for (const tok of afterItem) {
+          const up = tok.val.toUpperCase();
+          if (knownUnits.has(up)) {
+            rawSatuan = up;
+          } else if (/^[\d.,\s-]+$/.test(tok.val) && /\d/.test(tok.val)) {
+            numericTokens.push(cleanNumber(tok.val));
+          } else if (tok.val.length >= 2 && !categoryKeywords.has(up)) {
+            salesName = tok.val.toUpperCase();
+            lastKnownSales = salesName;
+          }
+        }
+
+        if (numericTokens.length >= 1) rawQty = numericTokens[0];
+        if (numericTokens.length >= 2) rawHarga = numericTokens[1];
+        if (rawQty === 0) continue;
+
+        const mapped = mapAccurateItemToNSEP(rawItem, rawSatuan, rawQty);
+
         transactions.push({
           rowIdx: i,
-          sourceFile: sourceFileName,
-          store: rowStore,
-          noFaktur: rowFaktur,
-          year: dateObj.year,
-          month: dateObj.month,
+          sourceFile,
+          store: currentStore,
+          noFaktur: lastKnownFaktur,
+          year: lastKnownDate.year,
+          month: lastKnownDate.month,
           brandId: mapped.brandId,
-          rawItem: itemCandidate,
+          rawItem,
           volKgLtr: mapped.volKgLtr,
-          amountRp: priceVal,
-          sales: (salesVal || lastKnownSales || 'Tanpa Nama Sales').toUpperCase()
+          amountRp: rawHarga,
+          sales: salesName || 'Tanpa Nama Sales'
         });
       }
 
@@ -1110,41 +1128,66 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
     }
 
     function parseIndonesianDate(str) {
-      if (!str) return null;
+      if (str === null || str === undefined) return null;
       const s = String(str).trim();
-      const m1 = s.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]+)[\s\-\/]+(\d{4})$/);
+      if (!s) return null;
+
+      // 1. Format teks Indonesia/Inggris: "06 Jul 2026", "17 Nop 2026", "30-Jan-2025"
+      const m1 = s.match(/^(\d{1,2})[\s\-\/]+([A-Za-z]+)[\s\-\/]+(\d{2,4})$/);
       if (m1) {
         const month = ID_MONTH_MAP[m1[2].toLowerCase()];
-        const year = parseInt(m1[3], 10);
+        let year = parseInt(m1[3], 10);
+        if (year < 100) year += 2000;
         if (month && year >= 2020 && year <= 2035) {
           return { year, month };
         }
       }
+
+      // 2. Format ISO: "2026-07-06" atau "2026/07/06"
       const m2 = s.match(/^(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})/);
       if (m2) {
         const year = parseInt(m2[1], 10);
         const month = parseInt(m2[2], 10);
-        if (month >= 1 && month <= 12 && year >= 2020) return { year, month };
+        if (month >= 1 && month <= 12 && year >= 2020 && year <= 2035) return { year, month };
       }
-      const m3 = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+
+      // 3. Format DD/MM/YYYY atau MM/DD/YYYY (termasuk output raw:false dari SheetJS seperti "7/6/26" atau "06/07/2026")
+      const m3 = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{2,4})$/);
       if (m3) {
-        const month = parseInt(m3[2], 10);
-        const year = parseInt(m3[3], 10);
-        if (month >= 1 && month <= 12 && year >= 2020) return { year, month };
+        const p1 = parseInt(m3[1], 10);
+        const p2 = parseInt(m3[2], 10);
+        let year = parseInt(m3[3], 10);
+        if (year < 100) year += 2000;
+        if (year >= 2020 && year <= 2035) {
+          const month = p2 > 12 ? p1 : p2;
+          if (month >= 1 && month <= 12) return { year, month };
+        }
       }
+
+      // 4. Angka Serial Tanggal Excel (43831 = 1 Jan 2020 s/d 49674 = 31 Des 2035)
+      if (/^\d{5}(\.\d+)?$/.test(s)) {
+        const serial = parseFloat(s);
+        if (serial >= 43831 && serial <= 49674 && typeof XLSX !== 'undefined' && XLSX.SSF) {
+          const parsed = XLSX.SSF.parse_date_code(serial);
+          if (parsed && parsed.y >= 2020 && parsed.y <= 2035 && parsed.m >= 1 && parsed.m <= 12) {
+            return { year: parsed.y, month: parsed.m };
+          }
+        }
+      }
+
       return null;
     }
 
     function cleanNumber(val) {
-      if (typeof val === 'number') return isNaN(val) ? 0 : val;
-      const s = String(val || '').replace(/,/g, '').trim();
-      const n = parseFloat(s);
-      return isNaN(n) ? 0 : n;
+      if (typeof val === 'number') return val;
+      const s = String(val).replace(/,/g, '').trim();
+      const num = parseFloat(s);
+      return isNaN(num) ? 0 : num;
     }
 
-    function mapAccurateItemToNSEP(rawItem, rawUnit, qty) {
-      const item = String(rawItem || '').toUpperCase().trim();
-      const sat = String(rawUnit || '').toUpperCase().trim();
+    function mapAccurateItemToNSEP(rawItem, satuan, qty) {
+      const item = String(rawItem).toUpperCase().trim();
+      const sat = String(satuan).toUpperCase().trim();
 
       if (item.includes('15.15.15')) return { brandId: 'pb_nitro15', volKgLtr: qty };
       if (item.includes('CANTIK')) return { brandId: 'pb_cantik', volKgLtr: qty };
@@ -1154,27 +1197,27 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
         return { brandId: 'sp_smgold', volKgLtr: qty * factor };
       }
       if (item.includes('JAGAIR') || item.includes('JAGAAIR')) {
-        const factor = item.includes('500GR') || item.includes('500 GR') ? 0.5 : 1;
+        const factor = (item.includes('500GR') || item.includes('500 GR')) && sat === 'BKS' ? 0.5 : 1;
         return { brandId: 'sp_jagaair', volKgLtr: qty * factor };
       }
       if (item.includes('ASCOFOL')) {
-        const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
+        const factor = sat === 'BTL' ? (item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1))) : 1;
         return { brandId: 'sp_ascofol', volKgLtr: qty * factor };
       }
       if (item.includes('K-40') || item.includes('K40')) {
-        const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
+        const factor = sat === 'BTL' ? (item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1))) : 1;
         return { brandId: 'sp_k40', volKgLtr: qty * factor };
       }
       if (item.includes('LOUBANG')) {
-        const factor = item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1));
+        const factor = sat === 'BTL' ? (item.includes('100 ML') ? 0.1 : (item.includes('250 ML') ? 0.25 : (item.includes('500 ML') ? 0.5 : 1))) : 1;
         return { brandId: 'sp_loubang', volKgLtr: qty * factor };
       }
       if (item.includes('(CUAN)') || item.includes('UREA AMONIUM NITRAT') || item.startsWith('CUAN ')) {
-        const factor = sat === 'PCH' ? 2 : (sat === 'JRC' ? 5 : 1);
+        const factor = sat === 'PCH' ? 2 : (sat === 'JRC' || sat === 'JRG' ? 5 : 1);
         return { brandId: 'sp_cuan', volKgLtr: qty * factor };
       }
-      if (item.includes('PERFECT') && item.includes('15.6.20')) return { brandId: 'sp_perfect', volKgLtr: qty };
-      if (item.includes('NPK SPECIAL') || item.includes('12-12-17S')) return { brandId: 'sp_special', volKgLtr: qty };
+      if (item.includes('PERFECT 15.6.20') || item.includes('NITROPHOSKA PERFECT')) return { brandId: 'sp_perfect', volKgLtr: qty };
+      if (item.includes('NPK SPECIAL') || item.includes('NITROPHOSKA SPECIAL')) return { brandId: 'sp_special', volKgLtr: qty };
       if (item.includes('TRIO KALI') || item.includes('TRIOKALI')) return { brandId: 'sp_triokali', volKgLtr: qty };
       if (item.includes('UREON') || item.includes('AMMONIUM CHLORIDA')) return { brandId: 'sp_ureon', volKgLtr: qty };
       if (item.includes('SULPHOS')) return { brandId: 'sp_sulphos', volKgLtr: qty };
@@ -1187,19 +1230,19 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
       if (item.includes('SANTANICALNIT') || item.includes('CALNIT')) return { brandId: 'cp_calnit', volKgLtr: qty };
       if (item.includes('CANIBOR') || item.includes('CARATE')) return { brandId: 'cp_carate', volKgLtr: qty };
       if (item.includes('MAGNESIUM NITRATE') || item.includes('MAGNESIUM NITRAT')) return { brandId: 'cp_mgnitrat', volKgLtr: qty };
-      if (item.includes('MAGNESIUM SULFATE') || item.includes('MANZUR')) return { brandId: 'cp_mgsulfat', volKgLtr: qty };
-      if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)') || item.startsWith('MKP')) {
+      if (item.includes('MAGNESIUM SULFATE') || item.includes('MAGNESIUM SULFAT') || item.includes('MANZUR')) return { brandId: 'cp_mgsulfat', volKgLtr: qty };
+      if (item.includes('MONO POTASSIUM PHOSPHATE') || item.includes('(MKP)') || item.startsWith('MKP ')) {
         const factor = sat === 'DUS' ? 20 : 1;
         return { brandId: 'cp_mkp', volKgLtr: qty * factor };
       }
-      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || item.startsWith('MAP')) return { brandId: 'cp_map', volKgLtr: qty };
+      if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || item.startsWith('MAP ')) return { brandId: 'cp_map', volKgLtr: qty };
       if (item.includes('CANKALI')) return { brandId: 'cp_cankali', volKgLtr: qty };
       if (item.includes('SANTAGROW ZK')) return { brandId: 'cp_zk', volKgLtr: qty };
-      if (item.includes('KNO3 PUTIH')) return { brandId: 'cp_nop', volKgLtr: qty };
+      if (item.includes('KNO3 PUTIH') || item.includes('S.GROW NOP')) return { brandId: 'cp_nop', volKgLtr: qty };
       if (item.includes('16.16.16')) return { brandId: 'cp_nitro16', volKgLtr: qty };
       if (item.includes('17.17.17')) return { brandId: 'cp_nitro17', volKgLtr: qty };
+      if (item.includes('15.10.20')) return { brandId: 'cp_nitro151020', volKgLtr: qty };
       if (item.includes('SANTAPHOS')) return { brandId: 'cp_santaphos', volKgLtr: qty };
-      if (item.includes('15.10.20') && !item.includes('ENTEC')) return { brandId: 'cp_nitro151020', volKgLtr: qty };
       if (item.includes('KCL GRANULAR') || item.includes('SANTAGROW KCL')) return { brandId: 'cp_kcl', volKgLtr: qty };
       if (item.includes('KUDA SAKTI')) return { brandId: 'cp_tsp', volKgLtr: qty };
 
@@ -1207,277 +1250,260 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
     }
 
     function aggregateByStore(transactions) {
+      clearEvalCache();
       const storeMap = new Map();
       const unmappedSet = new Set();
 
-      transactions.forEach(tx => {
-        if (!tx.brandId) {
-          unmappedSet.add(tx.rawItem);
-        }
+      for (const tx of transactions) {
         if (!storeMap.has(tx.store)) {
           storeMap.set(tx.store, {
             name: tx.store,
             salesSet: new Set(),
             vol25: {},
             vol26: {},
-            preProgramVol26: {},
-            rp26: 0
+            vol26PreProgram: {},
+            nsepOmzet26: 0
           });
         }
         const st = storeMap.get(tx.store);
-        if (tx.sales && tx.sales !== 'TANPA NAMA SALES') {
-          st.salesSet.add(tx.sales);
+        if (tx.sales && tx.sales !== 'Tanpa Nama Sales') st.salesSet.add(tx.sales);
+
+        if (!tx.brandId) {
+          unmappedSet.add(tx.rawItem);
+          continue;
         }
 
-        if (!tx.brandId) return;
-
-        const inRange = tx.month >= state.startMonth && tx.month <= state.endMonth;
-        if (tx.year === 2025 && inRange) {
+        const inMonthRange = tx.month >= state.startMonth && tx.month <= state.endMonth;
+        if (tx.year === 2025 && inMonthRange) {
           st.vol25[tx.brandId] = (st.vol25[tx.brandId] || 0) + tx.volKgLtr;
-        } else if (tx.year === 2026) {
-          if (inRange) {
-            st.vol26[tx.brandId] = (st.vol26[tx.brandId] || 0) + tx.volKgLtr;
-            st.rp26 += (tx.amountRp || 0);
-          } else if (tx.month < state.startMonth) {
-            st.preProgramVol26[tx.brandId] = (st.preProgramVol26[tx.brandId] || 0) + tx.volKgLtr;
-          }
+        } else if (tx.year === 2026 && inMonthRange) {
+          st.vol26[tx.brandId] = (st.vol26[tx.brandId] || 0) + tx.volKgLtr;
+          st.nsepOmzet26 += (tx.amountRp || 0);
+        } else if (tx.year === 2026 && tx.month < state.startMonth) {
+          st.vol26PreProgram[tx.brandId] = (st.vol26PreProgram[tx.brandId] || 0) + tx.volKgLtr;
         }
-      });
+      }
+
+      state.stores = Array.from(storeMap.values()).map(st => ({
+        name: st.name,
+        salesNames: Array.from(st.salesSet).join(', ') || 'Tanpa Nama Sales',
+        vol25: st.vol25,
+        vol26: st.vol26,
+        vol26PreProgram: st.vol26PreProgram,
+        nsepOmzet26: st.nsepOmzet26
+      })).sort((a, b) => a.name.localeCompare(b.name));
 
       state.unmappedItems = Array.from(unmappedSet).sort();
-      state.stores = Array.from(storeMap.values())
-        .map(st => ({
-          name: st.name,
-          salesList: Array.from(st.salesSet),
-          vol25: st.vol25,
-          vol26: st.vol26,
-          preProgramVol26: st.preProgramVol26,
-          rp26: st.rp26
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      clearEvalCache();
     }
 
     // =========================================================================
-    // 5. EVALUATION ENGINE (ATURAN PKS R-1 & R-2 + STRATA INSENTIF)
+    // 5. PROGRAM EVALUATION ENGINE (R-1 & R-2 SESUAI PKS + STRATA RESMI)
     // =========================================================================
     function evaluateStore(store, tier) {
       if (tier === 'NON') {
         return {
           tier: 'NON',
-          status: 'NON',
-          totalBrands: 0,
-          reqTotal: 0,
-          pbCount: 0,
-          spCount: 0,
-          cpCount: 0,
-          totalVol26: 0,
-          totalIncentiveRp: 0,
-          baselineRp: 0,
-          growthRp: 0,
-          blindRp: 0,
-          leagueRp: 0,
-          leagueTier: '-',
-          achievedCount: 0,
-          missingSummary: [],
+          statusCode: 'NON_PROGRAM',
+          statusLabel: 'Non-Program',
+          statusBadgeClass: 'bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-stone-300 dark:border-slate-700',
+          totalBrands: 0, pbCount: 0, spCount: 0, cpCount: 0,
+          qualifiedBrandsCount: 0,
+          baselineRp: 0, growthRp: 0, blindBonusRp: 0, leagueRp: 0, leagueName: '-', totalIncentiveRp: 0,
+          missingSummary: ['Toko ditandai Non-Program NSEP 2026'],
           nearMisses: [],
           productRows: []
         };
       }
 
+      const productRows = [];
       let pbCount = 0;
       let spCount = 0;
       let cpCount = 0;
-      let totalVol26 = 0;
-      let achievedCount = 0;
-
-      const missingPB = [];
+      let qualifiedBrandsCount = 0;
+      let baselineRp = 0;
+      let growthRp = 0;
+      let rawBlindRp = 0;
       const nearMisses = [];
-      const productRows = [];
 
-      NSEP_PRODUCTS.forEach(prod => {
-        const v25 = Number((store.vol25[prod.id] || 0).toFixed(2));
-        const v26 = Number((store.vol26[prod.id] || 0).toFixed(2));
-        const preV26 = Number((store.preProgramVol26?.[prod.id] || 0).toFixed(2));
-        totalVol26 += v26;
+      for (const prod of NSEP_PRODUCTS) {
+        const v25 = Number((store.vol25[prod.id] || 0).toFixed(3));
+        const v26 = Number((store.vol26[prod.id] || 0).toFixed(3));
+        const vPre = Number((store.vol26PreProgram?.[prod.id] || 0).toFixed(3));
+        const diff = Number((v26 - v25).toFixed(3));
 
-        const isEligiblePortfolioForTier = tier === 'R1' || prod.portfolio !== 'Strategic Platform';
+        const isCountedForTier = tier === 'R1' || (tier === 'R2' && (prod.portfolio === 'Power Brand' || prod.portfolio === 'Core Portfolio'));
+        const hasBought26 = v26 > 0 && isCountedForTier;
 
-        if (v26 > 0 && isEligiblePortfolioForTier) {
+        if (hasBought26) {
           if (prod.portfolio === 'Power Brand') pbCount++;
           else if (prod.portfolio === 'Strategic Platform') spCount++;
           else if (prod.portfolio === 'Core Portfolio') cpCount++;
-        } else if (prod.portfolio === 'Power Brand' && v26 === 0) {
-          missingPB.push(prod.name);
         }
 
         let strataLabel = '-';
-        let baselineRp = 0;
-        let growthRp = 0;
-        let blindEligibleVol = 0;
-        let blindRate = 0;
-        let gapToTarget = 0;
+        let rateRp = 0;
+        let prodBaseRp = 0;
+        let prodGrowthRp = 0;
+        let prodBlindRp = 0;
+        let nextTargetVol = null;
         let nextTargetLabel = '';
 
         if (tier === 'R1' && prod.r1) {
           const { s3, s2, s1, growth, blind } = prod.r1;
-          let rate = 0;
           if (s1 && v26 >= s1[0]) {
             strataLabel = 'Strata 1';
-            rate = s1[2];
+            rateRp = s1[2];
           } else if (s2 && v26 >= s2[0]) {
             strataLabel = 'Strata 2';
-            rate = s2[2];
-            if (s1) {
-              gapToTarget = Number((s1[0] - v26).toFixed(2));
-              nextTargetLabel = `Strata 1 (${formatNum(s1[0])} ${prod.unit})`;
-            }
+            rateRp = s2[2];
+            if (s1) { nextTargetVol = s1[0]; nextTargetLabel = 'Strata 1'; }
           } else if (s3 && v26 >= s3[0]) {
             strataLabel = 'Strata 3';
-            rate = s3[2];
-            if (s2) {
-              gapToTarget = Number((s2[0] - v26).toFixed(2));
-              nextTargetLabel = `Strata 2 (${formatNum(s2[0])} ${prod.unit})`;
-            }
+            rateRp = s3[2];
+            if (s2) { nextTargetVol = s2[0]; nextTargetLabel = 'Strata 2'; }
           } else {
-            const minReq = s3 ? s3[0] : (s2 ? s2[0] : (s1 ? s1[0] : 0));
+            const minEntry = s3 ? s3[0] : (s2 ? s2[0] : (s1 ? s1[0] : null));
             const minLabel = s3 ? 'Strata 3' : (s2 ? 'Strata 2' : 'Strata 1');
-            if (v26 > 0 && minReq > 0) {
-              strataLabel = 'Belum Strata';
-              gapToTarget = Number((minReq - v26).toFixed(2));
-              nextTargetLabel = `${minLabel} (Min. ${formatNum(minReq)} ${prod.unit})`;
+            if (minEntry !== null) {
+              nextTargetVol = minEntry;
+              nextTargetLabel = minLabel;
             }
           }
 
-          if (rate > 0) {
-            achievedCount++;
-            baselineRp = v26 * rate;
-            blindEligibleVol = v26;
-            blindRate = blind || 0;
+          if (rateRp > 0) {
+            qualifiedBrandsCount++;
+            prodBaseRp = v26 * rateRp;
+            baselineRp += prodBaseRp;
+            if (blind) {
+              prodBlindRp = v26 * blind;
+              rawBlindRp += prodBlindRp;
+            }
           }
 
-          if (v25 > 0 && v26 >= v25 * 1.15 && growth > 0) {
-            const diff = v26 - v25;
-            const cappedGrowthVol = Math.min(diff, v25 * 0.50);
-            growthRp = cappedGrowthVol * growth;
+          // Growth Incentive R-1: cair hanya jika Vol 2026 >= 115% dari Vol 2025, max cap 50% dari Vol 2025
+          if (v25 > 0 && v26 >= v25 * 1.15 && growth) {
+            const eligibleGrowthVol = Math.min(v26 - v25, v25 * 0.50);
+            prodGrowthRp = eligibleGrowthVol * growth;
+            growthRp += prodGrowthRp;
           }
         } else if (tier === 'R2' && prod.r2) {
           const { minVol, rate } = prod.r2;
           if (v26 >= minVol) {
-            strataLabel = 'Tercapai (R2)';
-            baselineRp = v26 * rate;
-            achievedCount++;
-          } else if (v26 > 0) {
-            strataLabel = 'Belum Min. Vol';
-            gapToTarget = Number((minVol - v26).toFixed(2));
-            nextTargetLabel = `Min. R2 (${formatNum(minVol)} ${prod.unit})`;
+            strataLabel = 'Lolos Min.';
+            rateRp = rate;
+            qualifiedBrandsCount++;
+            prodBaseRp = v26 * rateRp;
+            baselineRp += prodBaseRp;
+          } else {
+            nextTargetVol = minVol;
+            nextTargetLabel = 'Min. R-2';
           }
-        } else if (tier === 'R2' && prod.portfolio === 'Core Portfolio' && !prod.r2) {
-          if (v26 > 0) strataLabel = 'Portofolio (Non-Rp)';
         }
 
-        if (v26 > 0 && gapToTarget > 0) {
+        if (v26 > 0 && nextTargetVol !== null && v26 < nextTargetVol) {
+          const gap = Number((nextTargetVol - v26).toFixed(3));
+          const pct = Math.round((v26 / nextTargetVol) * 100);
           nearMisses.push({
-            id: prod.id,
             name: prod.name,
             portfolio: prod.portfolio,
             unit: prod.unit,
             vol26: v26,
-            gap: gapToTarget,
-            nextTargetLabel
+            targetVol: nextTargetVol,
+            targetLabel: nextTargetLabel,
+            gap,
+            pct
           });
         }
 
         productRows.push({
-          ...prod,
-          isEligiblePortfolioForTier,
-          vol25,
-          vol26,
-          preV26,
-          growthVol: Number((v26 - v25).toFixed(2)),
+          id: prod.id,
+          name: prod.name,
+          portfolio: prod.portfolio,
+          unit: prod.unit,
+          vol25: v25,
+          vol26: v26,
+          volPre,
+          diff,
           strataLabel,
-          baselineRp,
-          growthRp,
-          blindEligibleVol,
-          blindRate,
-          gapToTarget,
+          rateRp,
+          prodBaseRp,
+          prodGrowthRp,
+          prodTotalRp: prodBaseRp + prodGrowthRp,
+          nextTargetVol,
           nextTargetLabel
         });
-      });
-
-      let blindTotalRp = 0;
-      if (tier === 'R1' && achievedCount >= 4) {
-        productRows.forEach(r => {
-          if (r.blindEligibleVol > 0 && r.blindRate > 0) {
-            r.blindRp = r.blindEligibleVol * r.blindRate;
-            blindTotalRp += r.blindRp;
-          } else {
-            r.blindRp = 0;
-          }
-        });
-      } else {
-        productRows.forEach(r => { r.blindRp = 0; });
       }
 
-      const baselineTotalRp = productRows.reduce((acc, r) => acc + r.baselineRp, 0);
-      const growthTotalRp = productRows.reduce((acc, r) => acc + r.growthRp, 0);
-
-      let leagueRp = 0;
-      let leagueTier = 'Belum League';
-      if (tier === 'R1') {
-        if (store.rp26 >= 1250000000) { leagueRp = 24000000; leagueTier = 'Diamond'; }
-        else if (store.rp26 >= 1000000000) { leagueRp = 20000000; leagueTier = 'Platinum'; }
-        else if (store.rp26 >= 750000000) { leagueRp = 16000000; leagueTier = 'Gold'; }
-      } else if (tier === 'R2') {
-        if (store.rp26 >= 350000000) { leagueRp = 5000000; leagueTier = 'Gold'; }
-        else if (store.rp26 >= 250000000) { leagueRp = 4000000; leagueTier = 'Silver'; }
-        else if (store.rp26 >= 150000000) { leagueRp = 3000000; leagueTier = 'Bronze'; }
-      }
+      nearMisses.sort((a, b) => b.pct - a.pct);
 
       const totalBrands = tier === 'R1' ? (pbCount + spCount + cpCount) : (pbCount + cpCount);
-      const reqTotal = tier === 'R1' ? 12 : 8;
+      const blindBonusRp = (tier === 'R1' && qualifiedBrandsCount >= 4) ? rawBlindRp : 0;
+
+      // League Ranking
+      let leagueName = '-';
+      let leagueRp = 0;
+      if (tier === 'R1') {
+        if (store.nsepOmzet26 >= 1250000000) { leagueName = 'Diamond'; leagueRp = 24000000; }
+        else if (store.nsepOmzet26 >= 1000000000) { leagueName = 'Platinum'; leagueRp = 20000000; }
+        else if (store.nsepOmzet26 >= 750000000) { leagueName = 'Gold'; leagueRp = 16000000; }
+      } else if (tier === 'R2') {
+        if (store.nsepOmzet26 >= 350000000) { leagueName = 'Gold'; leagueRp = 5000000; }
+        else if (store.nsepOmzet26 >= 250000000) { leagueName = 'Silver'; leagueRp = 4000000; }
+        else if (store.nsepOmzet26 >= 150000000) { leagueName = 'Bronze'; leagueRp = 3000000; }
+      }
+
       const missingSummary = [];
+      const hasNitro15 = (store.vol26['pb_nitro15'] || 0) > 0;
+      const hasCantik = (store.vol26['pb_cantik'] || 0) > 0;
+
+      if (!hasNitro15) missingSummary.push('Wajib ambil Power Brand: Nitrophoska 15.15.15');
+      if (!hasCantik) missingSummary.push('Wajib ambil Power Brand: Cantik');
+
+      if (tier === 'R1') {
+        if (spCount < 3) missingSummary.push(`Strategic Platform kurang ${3 - spCount} merek (baru ${spCount}/3 merek)`);
+        if (cpCount < 3) missingSummary.push(`Core Portfolio kurang ${3 - cpCount} merek (baru ${cpCount}/3 merek)`);
+        if (totalBrands < 12) missingSummary.push(`Total portofolio kurang ${12 - totalBrands} merek lagi (baru ${totalBrands}/12 merek)`);
+      } else {
+        if (cpCount < 6) missingSummary.push(`Core Portfolio kurang ${6 - cpCount} merek (baru ${cpCount}/6 merek)`);
+        if (totalBrands < 8) missingSummary.push(`Total portofolio kurang ${8 - totalBrands} merek lagi (baru ${totalBrands}/8 merek)`);
+      }
+
+      let statusCode = 'ELIGIBLE';
+      let statusLabel = 'Lolos Syarat';
+      let statusBadgeClass = 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700';
 
       if (pbCount < 2) {
-        missingSummary.push(`Kurang ${2 - pbCount} Power Brand wajib (${missingPB.join(' & ')})`);
-      }
-      if (tier === 'R1') {
-        if (spCount < 3) missingSummary.push(`Kurang ${3 - spCount} merek Strategic Platform (saat ini ${spCount}/3)`);
-        if (cpCount < 3) missingSummary.push(`Kurang ${3 - cpCount} merek Core Portfolio (saat ini ${cpCount}/3)`);
-      } else {
-        if (cpCount < 6) missingSummary.push(`Kurang ${6 - cpCount} merek Core Portfolio (saat ini ${cpCount}/6)`);
-      }
-      if (totalBrands < reqTotal) {
-        missingSummary.push(`Total merek baru ${totalBrands}/${reqTotal} (kurang ${reqTotal - totalBrands} merek Santani)`);
+        statusCode = 'MISSING_PB';
+        statusLabel = 'Kurang Power Brand';
+        statusBadgeClass = 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700';
+      } else if (missingSummary.length > 0) {
+        statusCode = 'MISSING_PORTFOLIO';
+        statusLabel = 'Kurang Merek';
+        statusBadgeClass = 'bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-700';
+      } else if (qualifiedBrandsCount === 0) {
+        statusCode = 'VOL_PENDING';
+        statusLabel = 'Vol. Belum Capai Target';
+        statusBadgeClass = 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700';
       }
 
-      const portfolioValid = missingSummary.length === 0;
-      const rawTotalRp = baselineTotalRp + growthTotalRp + blindTotalRp + leagueRp;
-
-      let status = 'ELIGIBLE';
-      if (pbCount < 2) status = 'MISSING_PB';
-      else if (!portfolioValid) status = 'MISSING_PORTFOLIO';
-      else if (achievedCount === 0 && leagueRp === 0) status = 'VOL_PENDING';
+      const totalIncentiveRp = baselineRp + growthRp + blindBonusRp + leagueRp;
 
       return {
         tier,
-        status,
-        portfolioValid,
+        statusCode,
+        statusLabel,
+        statusBadgeClass,
         totalBrands,
-        reqTotal,
         pbCount,
         spCount,
         cpCount,
-        totalVol26,
-        achievedCount,
-        baselineRp: baselineTotalRp,
-        growthRp: growthTotalRp,
-        blindRp: blindTotalRp,
+        qualifiedBrandsCount,
+        baselineRp,
+        growthRp,
+        blindBonusRp,
+        leagueName,
         leagueRp,
-        leagueTier,
-        totalIncentiveRp: portfolioValid ? rawTotalRp : 0,
-        potentialIncentiveRp: rawTotalRp,
+        totalIncentiveRp,
         missingSummary,
         nearMisses,
         productRows
@@ -1485,25 +1511,530 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
     }
 
     // =========================================================================
-    // 6. UI RENDERING (FILTER, STORE LIST, DETAIL AUDIT, WA & EXCEL EXPORT)
+    // 6. UI RENDERING & INTERACTIONS
     // =========================================================================
-    function setStatusFilter(filterKey) {
-      state.statusFilter = filterKey;
+    function activateDashboardUI() {
+      document.getElementById('dropzoneSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      document.getElementById('periodSelectorBox').classList.remove('hidden');
+      document.getElementById('periodSelectorBox').classList.add('flex');
+      document.getElementById('btnExportExcel').classList.remove('hidden');
+      document.getElementById('btnExportExcel').classList.add('inline-flex');
+
+      document.getElementById('loadedFileInfo').textContent =
+        `File: ${state.fileName} • Update: ${state.lastUpdated} • Total: ${state.stores.length} Toko`;
+
+      const alertBadge = document.getElementById('unmappedAlert');
+      if (state.unmappedItems.length > 0) {
+        alertBadge.classList.remove('hidden');
+        document.getElementById('unmappedCountText').textContent =
+          `${state.unmappedItems.length} item non-NSEP (${state.unmappedItems.slice(0, 2).join(', ')}...)`;
+      } else {
+        alertBadge.classList.add('hidden');
+      }
+
+      populateSalesFilter();
+      if (!state.selectedStoreName && state.stores.length > 0) {
+        state.selectedStoreName = state.stores[0].name;
+      }
+      refreshDashboard();
+      observeScrollReveals();
+    }
+
+    function populateSalesFilter() {
+      const salesSet = new Set();
+      state.stores.forEach(s => {
+        s.salesNames.split(',').forEach(name => {
+          const trimmed = name.trim();
+          if (trimmed && trimmed !== 'Tanpa Nama Sales') salesSet.add(trimmed);
+        });
+      });
+      const sel = document.getElementById('salesFilter');
+      const currentVal = state.salesFilter;
+      sel.innerHTML = '<option value="ALL">👤 Semua Nama Sales</option>' +
+        Array.from(salesSet).sort().map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
+      if (Array.from(salesSet).includes(currentVal)) sel.value = currentVal;
+      else state.salesFilter = 'ALL';
+    }
+
+    function refreshDashboard() {
+      let cEligible = 0, cVolPending = 0, cMissingPB = 0, cMissingPort = 0;
+      let totalRp = 0;
+
+      for (const s of state.stores) {
+        const ev = getEvaluatedStore(s);
+        if (ev.statusCode === 'ELIGIBLE') cEligible++;
+        else if (ev.statusCode === 'VOL_PENDING') cVolPending++;
+        else if (ev.statusCode === 'MISSING_PB') cMissingPB++;
+        else if (ev.statusCode === 'MISSING_PORTFOLIO') cMissingPort++;
+        if (ev.statusCode === 'ELIGIBLE') totalRp += ev.totalIncentiveRp;
+      }
+
+      document.getElementById('kpiEligible').textContent = cEligible;
+      document.getElementById('kpiVolPending').textContent = cVolPending;
+      document.getElementById('kpiMissingPB').textContent = cMissingPB;
+      document.getElementById('kpiMissingPortfolio').textContent = cMissingPort;
+
+      if (state.showIncentives) {
+        document.getElementById('kpiTotalIncentive').textContent = formatRupiah(totalRp);
+        document.getElementById('kpiIncentiveSub').textContent = 'Akumulasi toko lolos syarat';
+      } else {
+        document.getElementById('kpiTotalIncentive').textContent = '••••••••';
+        document.getElementById('kpiIncentiveSub').textContent = 'Mode Sales (Rp disembunyikan)';
+      }
+
+      renderStoreList();
+      if (state.selectedStoreName) {
+        renderStoreDetail(state.selectedStoreName);
+      }
+    }
+
+    function setStatusFilter(code) {
+      state.statusFilter = code;
       listRenderLimit = 60;
       document.querySelectorAll('.status-filter-btn').forEach(btn => {
-        const isActive = btn.getAttribute('data-filter') === filterKey;
-        btn.className = isActive
+        const active = btn.getAttribute('data-filter') === code;
+        btn.className = active
           ? 'btn-motion status-filter-btn px-3 py-2 rounded-xl text-xs font-extrabold bg-red-600 text-white shadow-2xs'
           : 'btn-motion status-filter-btn px-3 py-2 rounded-xl text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700';
       });
       renderStoreList();
     }
 
-    function openTierModal() {
-      const lines = state.stores.map(s => {
-        const tier = state.storeTiers[s.name] || state.defaultTier;
-        return `${s.name}\t${tier}`;
+    function renderStoreList() {
+      const q = (state.searchQuery || '').toLowerCase().trim();
+      const filtered = [];
+
+      for (const s of state.stores) {
+        if (state.salesFilter !== 'ALL' && !s.salesNames.includes(state.salesFilter)) continue;
+        if (q && !s.name.toLowerCase().includes(q) && !s.salesNames.toLowerCase().includes(q)) continue;
+        const ev = getEvaluatedStore(s);
+        if (state.statusFilter !== 'ALL' && ev.statusCode !== state.statusFilter) continue;
+        filtered.push({ store: s, ev });
+      }
+
+      document.getElementById('filteredStoreCount').textContent = `${filtered.length} toko`;
+      const container = document.getElementById('storeListContainer');
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-sm text-slate-500 dark:text-slate-400">Tidak ada toko yang sesuai pencarian.</div>`;
+        return;
+      }
+
+      // Auto-select first result if current selection is not in filtered list
+      if (!filtered.some(item => item.store.name === state.selectedStoreName)) {
+        state.selectedStoreName = filtered[0].store.name;
+        renderStoreDetail(state.selectedStoreName);
+      }
+
+      const slice = filtered.slice(0, listRenderLimit);
+      let html = slice.map(({ store, ev }) => {
+        const isSelected = store.name === state.selectedStoreName;
+        const reqTotal = ev.tier === 'R1' ? 12 : (ev.tier === 'R2' ? 8 : 0);
+        return `
+          <div onclick="selectStore('${escapeAttr(store.name)}')"
+               class="cursor-pointer p-4 transition-colors ${isSelected ? 'bg-red-50/90 dark:bg-red-950/40 border-l-4 border-red-600' : 'hover:bg-stone-50 dark:hover:bg-slate-800/70'}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="font-extrabold text-sm text-slate-900 dark:text-white leading-snug">${escapeHtml(store.name)}</div>
+              <span class="shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-black bg-slate-800 dark:bg-slate-700 text-white">${ev.tier}</span>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">👤 ${escapeHtml(store.salesNames)}</div>
+            <div class="mt-2.5 flex items-center justify-between gap-2 flex-wrap">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${ev.statusBadgeClass}">${ev.statusLabel}</span>
+              ${ev.tier !== 'NON' ? `<span class="text-xs font-bold text-slate-600 dark:text-slate-300">Merek: <b>${ev.totalBrands}/${reqTotal}</b> • Target: <b>${ev.qualifiedBrandsCount}</b></span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (filtered.length > listRenderLimit) {
+        html += `
+          <div class="p-3.5 text-center bg-stone-50 dark:bg-slate-900">
+            <button onclick="showMoreStores()" class="btn-motion w-full py-2.5 rounded-xl bg-stone-200 dark:bg-slate-800 hover:bg-stone-300 dark:hover:bg-slate-700 text-xs font-extrabold text-slate-800 dark:text-slate-200">
+              Tampilkan Lebih Banyak (${filtered.length - listRenderLimit} toko lagi)
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function selectStore(storeName) {
+      state.selectedStoreName = storeName;
+      renderStoreList();
+      renderStoreDetail(storeName);
+    }
+
+    function setStoreTier(storeName, newTier) {
+      state.storeTiers[storeName] = newTier;
+      clearEvalCache();
+      saveStateToStorage();
+      refreshDashboard();
+      showToast(`Skema ${storeName} diubah ke ${newTier}`, 'bg-amber-300');
+    }
+
+    function renderStoreDetail(storeName) {
+      const store = state.stores.find(s => s.name === storeName);
+      if (!store) return;
+      const ev = getEvaluatedStore(store);
+      const panel = document.getElementById('storeDetailPanel');
+      const periodLbl = getPeriodLabel();
+
+      const reqTotal = ev.tier === 'R1' ? 12 : 8;
+      const reqCP = ev.tier === 'R1' ? 3 : 6;
+
+      // Filter rows that have activity in 2025 or 2026 or pre-program
+      const activeRows = ev.productRows.filter(r => r.vol26 > 0 || r.vol25 > 0 || r.volPre > 0);
+      const unboughtPowerBrands = ev.productRows.filter(r => r.portfolio === 'Power Brand' && r.vol26 === 0);
+
+      panel.innerHTML = `
+        <div class="space-y-6 animate-panel-enter">
+          <!-- Store Header & Actions -->
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-stone-200 dark:border-slate-800">
+            <div>
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">${escapeHtml(store.name)}</h2>
+                <span class="px-3 py-1 rounded-full text-xs font-extrabold border ${ev.statusBadgeClass}">${ev.statusLabel}</span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
+                Sales: <b class="text-slate-800 dark:text-slate-200">${escapeHtml(store.salesNames)}</b> • Periode Evaluasi: <b>${periodLbl}</b>
+              </p>
+
+              <!-- Per-Store Tier Switch -->
+              <div class="mt-3 inline-flex items-center gap-1.5 bg-stone-100 dark:bg-slate-800 p-1 rounded-xl border border-stone-200 dark:border-slate-700">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400 px-2">Kasta Toko:</span>
+                ${['R1', 'R2', 'NON'].map(t => `
+                  <button onclick="setStoreTier('${escapeAttr(store.name)}', '${t}')"
+                          class="btn-motion px-3 py-1 rounded-lg text-xs font-extrabold ${ev.tier === t ? 'bg-red-600 text-white shadow-2xs' : 'text-slate-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700'}">
+                    ${t === 'NON' ? 'Non-Program' : 'Skema ' + t}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Action Buttons (WA Copy & AI Advice) -->
+            <div class="flex flex-wrap gap-2.5 shrink-0">
+              <button onclick="analyzeStoreWithAI('${escapeAttr(store.name)}')"
+                      class="btn-motion inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">
+                <span>✨ Saran AI</span>
+              </button>
+              <button onclick="copyWhatsAppReport('${escapeAttr(store.name)}')"
+                      class="btn-motion inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-sm">
+                <span>📲 Copy Laporan WA</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Advice Output Box -->
+          <div id="aiStoreAdviceBox" class="hidden bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-4 sm:p-5">
+            <div class="text-xs sm:text-sm font-black text-indigo-900 dark:text-indigo-200 mb-1.5">✨ Rekomendasi Strategi Penawaran Produk:</div>
+            <div id="aiStoreAdviceContent" class="text-xs sm:text-sm text-indigo-950 dark:text-indigo-100 whitespace-pre-line leading-relaxed"></div>
+          </div>
+
+          ${ev.tier !== 'NON' ? `
+          <!-- Portfolio Checklist Summary -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-2xl border ${ev.pbCount >= 2 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800'}">
+              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Power Brand (Wajib)</div>
+              <div class="text-xl font-black mt-1 ${ev.pbCount >= 2 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}">${ev.pbCount} / 2 merek</div>
+            </div>
+
+            ${ev.tier === 'R1' ? `
+            <div class="p-3.5 rounded-2xl border ${ev.spCount >= 3 ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800'}">
+              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Strategic Platform</div>
+              <div class="text-xl font-black mt-1 ${ev.spCount >= 3 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">${ev.spCount} / 3 merek</div>
+            </div>` : ''}
+
+            <div class="p-3.5 rounded-2xl border ${ev.cpCount >= reqCP ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800'}">
+              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Core Portfolio</div>
+              <div class="text-xl font-black mt-1 ${ev.cpCount >= reqCP ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}">${ev.cpCount} / ${reqCP} merek</div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl border ${ev.totalBrands >= reqTotal ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-orange-50/80 dark:bg-orange-950/40 border-orange-300 dark:border-orange-800'}">
+              <div class="text-xs font-extrabold text-slate-600 dark:text-slate-300">Total Merek NSEP</div>
+              <div class="text-xl font-black mt-1 ${ev.totalBrands >= reqTotal ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}">${ev.totalBrands} / ${reqTotal} merek</div>
+            </div>
+          </div>
+
+          <!-- Two-Column Diagnosis: Missing Portfolio vs Near-Miss Volume -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Left: Kekurangan Syarat Portofolio -->
+            <div class="rounded-2xl p-4 sm:p-5 border ${ev.missingSummary.length > 0 ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800' : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'}">
+              <h4 class="text-sm font-black ${ev.missingSummary.length > 0 ? 'text-rose-800 dark:text-rose-300' : 'text-emerald-800 dark:text-emerald-300'} mb-2.5">
+                ${ev.missingSummary.length > 0 ? '🚨 Kekurangan Syarat Portofolio:' : '✅ Syarat Jumlah Merek Sudah Lengkap!'}
+              </h4>
+              ${ev.missingSummary.length > 0 ? `
+                <ul class="space-y-2 text-xs sm:text-sm text-rose-950 dark:text-rose-100 font-semibold">
+                  ${ev.missingSummary.map(m => `<li class="flex items-start gap-2"><span>•</span><span>${escapeHtml(m)}</span></li>`).join('')}
+                </ul>
+              ` : `
+                <p class="text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                  Komposisi merek toko ini sudah sah sesuai PKS ${ev.tier}. Fokuskan order berikutnya untuk mengejar volume target per produk.
+                </p>
+              `}
+            </div>
+
+            <!-- Right: Peluang Kejar Volume (Nanggung Target) -->
+            <div class="rounded-2xl p-4 sm:p-5 border bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+              <h4 class="text-sm font-black text-amber-900 dark:text-amber-300 mb-2.5">
+                ⏳ Sudah Diambil, Tinggal Kejar Volume:
+              </h4>
+              ${ev.nearMisses.length > 0 ? `
+                <div class="space-y-2.5">
+                  ${ev.nearMisses.slice(0, 4).map(nm => `
+                    <div class="bg-white/90 dark:bg-slate-900/80 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/70">
+                      <div class="flex justify-between text-xs font-extrabold text-slate-900 dark:text-white">
+                        <span>${escapeHtml(nm.name)}</span>
+                        <span class="text-amber-700 dark:text-amber-400">Kurang ${formatNum(nm.gap)} ${nm.unit}</span>
+                      </div>
+                      <div class="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                        Saat ini <b>${formatNum(nm.vol26)} ${nm.unit}</b> dari target ${nm.targetLabel} (${formatNum(nm.targetVol)} ${nm.unit})
+                      </div>
+                      <div class="w-full h-1.5 bg-stone-200 dark:bg-slate-700 rounded-full mt-1.5 overflow-hidden">
+                        <div class="h-full bg-amber-500 rounded-full" style="width: ${Math.min(100, nm.pct)}%"></div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : `
+                <p class="text-xs sm:text-sm text-amber-950 dark:text-amber-200 leading-relaxed">
+                  Belum ada produk tanggung yang mendekati batas target berikutnya.
+                </p>
+              `}
+            </div>
+          </div>
+
+          ${state.showIncentives ? `
+          <!-- Confidential Incentive Breakdown (Only in Internal Mode) -->
+          <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-700">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-amber-400">🔒 Rincian Estimasi Insentif Internal (${ev.tier})</span>
+              <span class="text-lg sm:text-xl font-black text-emerald-400">${formatRupiah(ev.totalIncentiveRp)}</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div class="bg-slate-800/90 p-3 rounded-xl">
+                <div class="text-slate-400">Baseline Incentive</div>
+                <div class="font-extrabold text-sm mt-0.5">${formatRupiah(ev.baselineRp)}</div>
+              </div>
+              <div class="bg-slate-800/90 p-3 rounded-xl">
+                <div class="text-slate-400">Growth Incentive</div>
+                <div class="font-extrabold text-sm mt-0.5">${formatRupiah(ev.growthRp)}</div>
+              </div>
+              <div class="bg-slate-800/90 p-3 rounded-xl">
+                <div class="text-slate-400">Blind Bonus (≥4 Br.)</div>
+                <div class="font-extrabold text-sm mt-0.5">${formatRupiah(ev.blindBonusRp)}</div>
+              </div>
+              <div class="bg-slate-800/90 p-3 rounded-xl">
+                <div class="text-slate-400">League (${ev.leagueName})</div>
+                <div class="font-extrabold text-sm mt-0.5">${formatRupiah(ev.leagueRp)}</div>
+              </div>
+            </div>
+          </div>` : ''}
+
+          <!-- Product Performance Table -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-base font-black text-slate-900 dark:text-white">Rincian Pengambilan Produk (${periodLbl})</h4>
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold">${activeRows.length} produk tercatat</span>
+            </div>
+            <div class="overflow-x-auto rounded-2xl border border-stone-200 dark:border-slate-800">
+              <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr class="bg-stone-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold border-b border-stone-200 dark:border-slate-700">
+                    <th class="py-3 px-3.5">Produk NSEP</th>
+                    <th class="py-3 px-3">Portofolio</th>
+                    <th class="py-3 px-3 text-right">2025</th>
+                    <th class="py-3 px-3 text-right">2026 (${periodLbl})</th>
+                    <th class="py-3 px-3 text-center">Status Target</th>
+                    ${state.showIncentives ? '<th class="py-3 px-3.5 text-right">Est. Insentif</th>' : ''}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-200 dark:divide-slate-800">
+                  ${unboughtPowerBrands.map(r => `
+                    <tr class="bg-rose-50/50 dark:bg-rose-950/20">
+                      <td class="py-3 px-3.5 font-extrabold text-rose-700 dark:text-rose-400">${escapeHtml(r.name)}</td>
+                      <td class="py-3 px-3 text-xs font-bold text-rose-600 dark:text-rose-400">Power Brand (Wajib)</td>
+                      <td class="py-3 px-3 text-right text-slate-500">0 ${r.unit}</td>
+                      <td class="py-3 px-3 text-right font-extrabold text-rose-700 dark:text-rose-400">0 ${r.unit}</td>
+                      <td class="py-3 px-3 text-center">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300">Belum Diambil</span>
+                      </td>
+                      ${state.showIncentives ? '<td class="py-3 px-3.5 text-right text-slate-400">Rp 0</td>' : ''}
+                    </tr>
+                  `).join('')}
+                  ${activeRows.map(r => {
+                    const isHit = r.strataLabel !== '-';
+                    const gapTxt = (!isHit && r.nextTargetVol && r.vol26 > 0)
+                      ? `<div class="text-[11px] text-amber-700 dark:text-amber-400 font-bold mt-0.5">Kurang ${formatNum(r.nextTargetVol - r.vol26)} ${r.unit}</div>`
+                      : '';
+                    const preTxt = r.volPre > 0
+                      ? `<div class="text-[11px] text-slate-400 mt-0.5">+ ${formatNum(r.volPre)} ${r.unit} (Pra-Jul)</div>`
+                      : '';
+                    return `
+                      <tr class="hover:bg-stone-50 dark:hover:bg-slate-800/50">
+                        <td class="py-3 px-3.5 font-bold text-slate-900 dark:text-white">${escapeHtml(r.name)}</td>
+                        <td class="py-3 px-3 text-xs text-slate-600 dark:text-slate-400">${r.portfolio}</td>
+                        <td class="py-3 px-3 text-right text-slate-600 dark:text-slate-400">${formatNum(r.vol25)} ${r.unit}</td>
+                        <td class="py-3 px-3 text-right font-extrabold text-slate-900 dark:text-white">
+                          ${formatNum(r.vol26)} ${r.unit}
+                          ${preTxt}
+                        </td>
+                        <td class="py-3 px-3 text-center">
+                          ${isHit
+                            ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">✅ ${r.strataLabel}</span>`
+                            : (r.vol26 > 0
+                                ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">⏳ Belum Capai</span>${gapTxt}`
+                                : `<span class="text-xs text-slate-400">-</span>`
+                              )
+                          }
+                        </td>
+                        ${state.showIncentives ? `<td class="py-3 px-3.5 text-right font-extrabold text-emerald-700 dark:text-emerald-400">${formatRupiah(r.prodTotalRp)}</td>` : ''}
+                      </tr>
+                    `;
+                  }).join('')}
+                  ${(activeRows.length === 0 && unboughtPowerBrands.length === 0) ? `
+                    <tr><td colspan="6" class="py-8 text-center text-slate-400">Belum ada transaksi produk NSEP pada periode ini.</td></tr>
+                  ` : ''}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          ` : `
+          <div class="p-8 text-center rounded-2xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200 dark:border-slate-700">
+            <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Toko ini sedang ditandai sebagai <b>Non-Program</b>. Pilih <b>Skema R-1</b> atau <b>Skema R-2</b> di atas jika ingin mengevaluasi target programnya.</p>
+          </div>
+          `}
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 7. WHATSAPP REPORT COPY & EXCEL EXPORT
+    // =========================================================================
+    function copyWhatsAppReport(storeName) {
+      const store = state.stores.find(s => s.name === storeName);
+      if (!store) return;
+      const ev = getEvaluatedStore(store);
+      const periodLbl = getPeriodLabel();
+      const reqTotal = ev.tier === 'R1' ? 12 : 8;
+
+      const achievedLines = [];
+      const unachievedLines = [];
+
+      for (const r of ev.productRows) {
+        if (r.strataLabel !== '-') {
+          const rpPart = state.showIncentives ? ` (Est. ${formatRupiah(r.prodTotalRp)})` : '';
+          achievedLines.push(`  • ${r.name}: ${formatNum(r.vol26)} ${r.unit} [${r.strataLabel}]${rpPart}`);
+        } else if (r.vol26 > 0) {
+          const gapPart = r.nextTargetVol
+            ? ` -> Kurang ${formatNum(r.nextTargetVol - r.vol26)} ${r.unit} lagi (Target ${r.nextTargetLabel}: ${formatNum(r.nextTargetVol)} ${r.unit})`
+            : '';
+          unachievedLines.push(`  • ${r.name}: ${formatNum(r.vol26)} ${r.unit}${gapPart}`);
+        }
+      }
+
+      const missingLines = ev.missingSummary.map(m => `  • ${m}`);
+
+      const lines = [
+        `*UPDATE PROGRAM SANTANI NSEP 2026 (${ev.tier})*`,
+        `Toko: *${store.name}*`,
+        `Periode: ${periodLbl} 2026`,
+        `Status Portofolio: *${ev.statusLabel}* (${ev.totalBrands}/${reqTotal} merek)`,
+        ``,
+        `*1. PRODUK SUDAH TERCAPAI TARGET:*`,
+        ...(achievedLines.length > 0 ? achievedLines : ['  • Belum ada produk mencapai target minimum']),
+        ``,
+        `*2. PRODUK SUDAH DIAMBIL TAPI BELUM TERCAPAI TARGET:*`,
+        ...(unachievedLines.length > 0 ? unachievedLines : ['  • Tidak ada']),
+        ``,
+        `*3. SYARAT MEREK YANG MASIH KURANG:*`,
+        ...(missingLines.length > 0 ? missingLines : ['  • Semua syarat merek wajib sudah terpenuhi!'])
+      ];
+
+      if (state.showIncentives && ev.statusCode === 'ELIGIBLE') {
+        lines.push('', `*Estimasi Insentif Sementara:* ${formatRupiah(ev.totalIncentiveRp)}`);
+      }
+
+      const text = lines.join('\n');
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+
+      showToast('Laporan WA berhasil disalin! Siap paste ke WhatsApp.', 'bg-emerald-400');
+    }
+
+    function exportToExcel() {
+      if (state.stores.length === 0) return;
+      const periodLbl = getPeriodLabel();
+
+      const summaryRows = state.stores.map(s => {
+        const ev = getEvaluatedStore(s);
+        const row = {
+          'Nama Toko': s.name,
+          'Sales': s.salesNames,
+          'Skema': ev.tier,
+          'Periode': periodLbl,
+          'Status Kelayakan': ev.statusLabel,
+          'Total Merek': ev.totalBrands,
+          'Power Brand': ev.pbCount,
+          'Strategic Platform': ev.spCount,
+          'Core Portfolio': ev.cpCount,
+          'Merek Capai Target': ev.qualifiedBrandsCount,
+          'Kekurangan Syarat': ev.missingSummary.join('; ') || 'Lengkap'
+        };
+        if (state.showIncentives) {
+          row['Baseline (Rp)'] = ev.baselineRp;
+          row['Growth (Rp)'] = ev.growthRp;
+          row['Blind Bonus (Rp)'] = ev.blindBonusRp;
+          row['League (Rp)'] = ev.leagueRp;
+          row['Total Estimasi Insentif (Rp)'] = ev.totalIncentiveRp;
+        }
+        return row;
       });
+
+      const detailRows = [];
+      for (const s of state.stores) {
+        const ev = getEvaluatedStore(s);
+        if (ev.tier === 'NON') continue;
+        for (const r of ev.productRows) {
+          if (r.vol26 === 0 && r.vol25 === 0) continue;
+          const dRow = {
+            'Nama Toko': s.name,
+            'Skema': ev.tier,
+            'Portofolio': r.portfolio,
+            'Merek NSEP': r.name,
+            'Satuan': r.unit,
+            [`Vol 2025 (${periodLbl})`]: r.vol25,
+            [`Vol 2026 (${periodLbl})`]: r.vol26,
+            'Selisih Growth': r.diff,
+            'Status Target': r.strataLabel,
+            'Kurang ke Target Berikutnya': (r.strataLabel === '-' && r.nextTargetVol && r.vol26 > 0) ? (r.nextTargetVol - r.vol26) : 0
+          };
+          if (state.showIncentives) {
+            dRow['Est. Insentif Produk (Rp)'] = r.prodTotalRp;
+          }
+          detailRows.push(dRow);
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws1 = XLSX.utils.json_to_sheet(summaryRows);
+      const ws2 = XLSX.utils.json_to_sheet(detailRows);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Rekap Toko');
+      XLSX.utils.book_append_sheet(wb, ws2, 'Rincian Produk');
+      XLSX.writeFile(wb, `Rekap_Santani_NSEP_2026_${periodLbl}.xlsx`);
+      showToast('File Excel rekap berhasil diunduh!', 'bg-emerald-400');
+    }
+
+    // =========================================================================
+    // 8. BULK TIER MODAL, MOTION EFFECTS & UTILITIES
+    // =========================================================================
+    function openTierModal() {
+      const lines = state.stores.map(s => `${s.name}\t${state.storeTiers[s.name] || state.defaultTier}`);
       document.getElementById('tierBulkInput').value = lines.join('\n');
       document.getElementById('tierModal').classList.remove('hidden');
     }
@@ -1514,639 +2045,129 @@ Berikan 3 poin saran praktis & ramah berbahasa Indonesia untuk membantu tim Sale
 
     function applyBulkTierTags() {
       const raw = document.getElementById('tierBulkInput').value || '';
-      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       let updated = 0;
-
-      lines.forEach(line => {
-        const parts = line.split(/\t|,|\|/).map(p => p.trim()).filter(Boolean);
+      raw.split(/\r?\n/).forEach(line => {
+        const parts = line.split(/[\t,;]+/).map(p => p.trim()).filter(Boolean);
         if (parts.length >= 2) {
-          const storeQuery = parts[0].toUpperCase();
-          const tierRaw = parts[1].toUpperCase().replace('-', '');
-          const validTier = tierRaw === 'R1' ? 'R1' : (tierRaw === 'R2' ? 'R2' : (tierRaw.includes('NON') ? 'NON' : null));
-          if (validTier) {
-            const matched = state.stores.find(s => s.name === storeQuery || s.name.includes(storeQuery));
-            if (matched) {
-              state.storeTiers[matched.name] = validTier;
-              updated++;
-            } else {
-              state.storeTiers[storeQuery] = validTier;
-              updated++;
-            }
+          const storeName = parts[0].toUpperCase();
+          const tierVal = parts[parts.length - 1].toUpperCase();
+          if (['R1', 'R-1', 'R2', 'R-2', 'NON'].includes(tierVal)) {
+            state.storeTiers[storeName] = tierVal.replace('-', '');
+            updated++;
           }
         }
       });
-
+      clearEvalCache();
       saveStateToStorage();
       closeTierModal();
-      refreshDashboard();
-      showToast(`Berhasil menyimpan skema untuk ${updated} pelanggan!`, 'bg-emerald-300');
+      if (state.stores.length > 0) refreshDashboard();
+      showToast(`${updated} daftar toko berhasil diperbarui!`, 'bg-emerald-400');
     }
 
-    function setStoreTier(storeName, tier) {
-      state.storeTiers[storeName] = tier;
-      saveStateToStorage();
-      refreshDashboard();
-      showToast(`Skema ${storeName} diubah ke ${tier === 'NON' ? 'Non-Program' : tier}`, 'bg-emerald-300');
-    }
-
-    function populateSalesFilter() {
-      const sel = document.getElementById('salesFilter');
-      if (!sel) return;
-      const salesSet = new Set();
-      state.stores.forEach(s => {
-        (s.salesList || []).forEach(sl => {
-          if (sl && sl !== 'TANPA NAMA SALES') salesSet.add(sl);
-        });
-      });
-      const currentVal = state.salesFilter;
-      const options = ['<option value="ALL">👤 Semua Nama Sales</option>'];
-      Array.from(salesSet).sort().forEach(sl => {
-        options.push(`<option value="${escapeAttr(sl)}">👤 ${escapeHtml(sl)}</option>`);
-      });
-      sel.innerHTML = options.join('');
-      if (salesSet.has(currentVal)) {
-        sel.value = currentVal;
-      } else {
-        state.salesFilter = 'ALL';
-        sel.value = 'ALL';
-      }
-    }
-
-    function activateDashboardUI() {
-      document.getElementById('dropzoneSection').classList.add('hidden');
-      document.getElementById('dashboardSection').classList.remove('hidden');
-      document.getElementById('periodSelectorBox').classList.remove('hidden');
-      document.getElementById('periodSelectorBox').classList.add('flex');
-      document.getElementById('btnExportExcel').classList.remove('hidden');
-      document.getElementById('btnExportExcel').classList.add('inline-flex');
-
-      const infoLabel = document.getElementById('loadedFileInfo');
-      if (infoLabel) {
-        infoLabel.textContent = `File: ${state.fileName || 'Data Accurate'} • Update: ${state.lastUpdated || '-'} • Total: ${state.stores.length} Toko`;
-      }
-
-      const unmappedAlert = document.getElementById('unmappedAlert');
-      if (unmappedAlert) {
-        if (state.unmappedItems && state.unmappedItems.length > 0) {
-          unmappedAlert.classList.remove('hidden');
-          document.getElementById('unmappedCountText').textContent = `${state.unmappedItems.length} item non-NSEP (${state.unmappedItems.slice(0, 2).join(', ')}...)`;
-        } else {
-          unmappedAlert.classList.add('hidden');
-        }
-      }
-
-      populateSalesFilter();
-      refreshDashboard();
-      observeScrollReveals();
-    }
-
-    function refreshDashboard() {
-      clearEvalCache();
-
-      let eligibleCount = 0;
-      let volPendingCount = 0;
-      let missingPbCount = 0;
-      let missingPortfolioCount = 0;
-      let totalIncentiveRp = 0;
-
-      state.stores.forEach(store => {
-        const ev = getEvaluatedStore(store);
-        if (ev.tier === 'NON') return;
-        totalIncentiveRp += ev.totalIncentiveRp;
-        if (ev.status === 'ELIGIBLE') eligibleCount++;
-        else if (ev.status === 'VOL_PENDING') volPendingCount++;
-        else if (ev.status === 'MISSING_PB') missingPbCount++;
-        else if (ev.status === 'MISSING_PORTFOLIO') missingPortfolioCount++;
-      });
-
-      document.getElementById('kpiEligible').textContent = eligibleCount;
-      document.getElementById('kpiVolPending').textContent = volPendingCount;
-      document.getElementById('kpiMissingPB').textContent = missingPbCount;
-      document.getElementById('kpiMissingPortfolio').textContent = missingPortfolioCount;
-
-      const kpiIncentiveEl = document.getElementById('kpiTotalIncentive');
-      const kpiIncentiveSub = document.getElementById('kpiIncentiveSub');
-      if (kpiIncentiveEl) {
-        if (state.showIncentives) {
-          kpiIncentiveEl.textContent = formatRupiah(totalIncentiveRp);
-          if (kpiIncentiveSub) kpiIncentiveSub.textContent = 'Baseline + Growth + Blind + League';
-        } else {
-          kpiIncentiveEl.textContent = '••••••••';
-          if (kpiIncentiveSub) kpiIncentiveSub.textContent = 'Mode Sales (Rp disembunyikan)';
-        }
-      }
-
-      renderStoreList();
-      if (state.selectedStoreName) {
-        const exists = state.stores.some(s => s.name === state.selectedStoreName);
-        if (exists) {
-          renderStoreDetail(state.selectedStoreName);
-        } else {
-          state.selectedStoreName = null;
-        }
-      }
-    }
-
-    function renderStoreList() {
-      const container = document.getElementById('storeListContainer');
-      if (!container) return;
-
-      const query = (state.searchQuery || '').toLowerCase().trim();
-      const filtered = state.stores.filter(store => {
-        const ev = getEvaluatedStore(store);
-        if (state.statusFilter !== 'ALL' && ev.status !== state.statusFilter) return false;
-        if (state.salesFilter !== 'ALL' && !(store.salesList || []).includes(state.salesFilter)) return false;
-        if (query) {
-          const matchName = store.name.toLowerCase().includes(query);
-          const matchSales = (store.salesList || []).some(sl => sl.toLowerCase().includes(query));
-          if (!matchName && !matchSales) return false;
-        }
-        return true;
-      });
-
-      document.getElementById('filteredStoreCount').textContent = `${filtered.length} toko`;
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<div class="p-10 text-center text-sm font-medium text-slate-500 dark:text-slate-400">Tidak ada toko yang sesuai pencarian Bapak/Ibu.</div>`;
-        return;
-      }
-
-      const visibleStores = filtered.slice(0, listRenderLimit);
-      const cardsHtml = visibleStores.map(store => {
-        const ev = getEvaluatedStore(store);
-        const isSelected = state.selectedStoreName === store.name;
-        let badgeHtml = '';
-        if (ev.tier === 'NON') {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">NON-NSEP</span>`;
-        } else if (ev.status === 'ELIGIBLE') {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">✅ LOLOS</span>`;
-        } else if (ev.status === 'VOL_PENDING') {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700">⚠️ VOL KURANG</span>`;
-        } else if (ev.status === 'MISSING_PB') {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">🚨 KURANG PB</span>`;
-        } else {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-orange-100 dark:bg-orange-950 text-orange-900 dark:text-orange-300 border border-orange-300 dark:border-orange-700">❌ KURANG MEREK</span>`;
-        }
-
-        const salesText = (store.salesList && store.salesList.length > 0) ? store.salesList.join(', ') : '-';
-        const rpBadge = (state.showIncentives && ev.totalIncentiveRp > 0)
-          ? `<span class="text-xs font-black text-emerald-700 dark:text-emerald-400">${formatRupiah(ev.totalIncentiveRp)}</span>`
-          : '';
-
-        return `
-          <div onclick="selectStore('${escapeAttr(store.name)}')"
-               class="btn-motion p-4 cursor-pointer transition-all hover:bg-red-50/40 dark:hover:bg-red-950/20 ${isSelected ? 'bg-red-50/70 dark:bg-red-950/40 border-l-4 border-l-red-600' : ''}">
-            <div class="flex items-start justify-between gap-2.5">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="px-2 py-0.5 rounded-md text-xs font-black ${ev.tier === 'R1' ? 'bg-red-600 text-white' : (ev.tier === 'R2' ? 'bg-indigo-600 text-white' : 'bg-stone-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200')}">${ev.tier}</span>
-                  <h4 class="text-sm font-extrabold text-slate-900 dark:text-white truncate">${escapeHtml(store.name)}</h4>
-                </div>
-                <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 truncate">Sales: <span class="font-semibold">${escapeHtml(salesText)}</span></p>
-              </div>
-              <div class="text-right shrink-0">
-                ${badgeHtml}
-                <div class="mt-1">${rpBadge}</div>
-              </div>
-            </div>
-            <div class="mt-2.5 flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 bg-stone-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-stone-200/70 dark:border-slate-700">
-              <span>Merek: <b>${ev.totalBrands}/${ev.reqTotal}</b> (PB:${ev.pbCount}/2 • ${ev.tier === 'R1' ? `SP:${ev.spCount}/3 • CP:${ev.cpCount}/3` : `CP:${ev.cpCount}/6`})</span>
-              <span>Vol 26: <b>${formatNum(ev.totalVol26)}</b></span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const loadMoreHtml = filtered.length > visibleStores.length
-        ? `<div class="p-4 bg-stone-50 dark:bg-slate-900 text-center">
-            <button onclick="showMoreStores()" class="btn-motion w-full py-3 px-4 rounded-2xl bg-white dark:bg-slate-800 hover:bg-stone-100 dark:hover:bg-slate-700 border-2 border-stone-300 dark:border-slate-700 text-sm font-extrabold text-slate-800 dark:text-slate-100 shadow-2xs">
-              Tampilkan Lebih Banyak (${visibleStores.length} dari ${filtered.length} toko)
-            </button>
-           </div>`
-        : '';
-
-      container.innerHTML = cardsHtml + loadMoreHtml;
-    }
-
-    function selectStore(storeName) {
-      state.selectedStoreName = storeName;
-      renderStoreList();
-      renderStoreDetail(storeName);
-      // Pada layar HP/tablet, scroll halus menuju panel detail toko
-      if (window.innerWidth < 1024) {
-        document.getElementById('storeDetailPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-
-    function renderStoreDetail(storeName) {
-      const panel = document.getElementById('storeDetailPanel');
-      const store = state.stores.find(s => s.name === storeName);
-      if (!panel || !store) return;
-
-      const ev = getEvaluatedStore(store);
-      const periodLbl = getPeriodLabel();
-      const salesText = (store.salesList && store.salesList.length > 0) ? store.salesList.join(', ') : '-';
-
-      const activeRows = ev.productRows.filter(r => r.vol26 > 0 || r.vol25 > 0 || r.portfolio === 'Power Brand');
-
-      let bannerStyle = 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200';
-      let bannerTitle = '✅ MEMENUHI SYARAT PORTOFOLIO & TARGET';
-      if (ev.tier === 'NON') {
-        bannerStyle = 'bg-stone-100 dark:bg-slate-800 border-stone-300 dark:border-slate-700 text-slate-800 dark:text-slate-200';
-        bannerTitle = '⚪ PELANGGAN NON-PROGRAM NSEP';
-      } else if (ev.status === 'MISSING_PB') {
-        bannerStyle = 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700 text-rose-950 dark:text-rose-200';
-        bannerTitle = '🚨 PERHATIAN: KURANG POWER BRAND WAJIB';
-      } else if (ev.status === 'MISSING_PORTFOLIO') {
-        bannerStyle = 'bg-orange-50 dark:bg-orange-950/60 border-orange-300 dark:border-orange-700 text-orange-950 dark:text-orange-200';
-        bannerTitle = '❌ BELUM MEMENUHI SYARAT KOMPOSISI MEREK';
-      } else if (ev.status === 'VOL_PENDING') {
-        bannerStyle = 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200';
-        bannerTitle = '⚠️ MEREK SUDAH SAH, TINGGAL KEJAR VOLUME';
-      }
-
-      const missingBlockHtml = ev.tier === 'NON'
-        ? `<p class="text-sm text-slate-700 dark:text-slate-300">Pelanggan ini ditandai sebagai Non-Program. Ubah pilihan skema ke R-1 atau R-2 di kanan atas jika ingin mengauditnya.</p>`
-        : (ev.missingSummary.length > 0
-            ? `<ul class="space-y-2 text-sm font-bold">
-                ${ev.missingSummary.map(m => `<li class="flex items-start gap-2.5"><span class="text-rose-600 dark:text-rose-400 font-black">✖</span><span>${escapeHtml(m)}</span></li>`).join('')}
-               </ul>`
-            : `<div class="text-sm font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-2"><span>✔</span><span>Komposisi merek sudah lengkap sesuai ketentuan PKS ${ev.tier}!</span></div>`);
-
-      const nearMissHtml = (ev.tier !== 'NON' && ev.nearMisses.length > 0)
-        ? `<div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 sm:p-5">
-            <h4 class="text-xs sm:text-sm font-black uppercase tracking-wide text-amber-950 dark:text-amber-300 mb-3">⏳ Produk Sudah Diambil Tapi Belum Tercapai Target (Peluang Order)</h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              ${ev.nearMisses.map(nm => `
-                <div class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-amber-200 dark:border-amber-700/60 flex items-center justify-between gap-2.5 shadow-2xs">
-                  <div>
-                    <div class="text-sm font-extrabold text-slate-900 dark:text-white">${escapeHtml(nm.name)}</div>
-                    <div class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Baru ambil: <b>${formatNum(nm.vol26)} ${nm.unit}</b></div>
-                  </div>
-                  <div class="text-right">
-                    <span class="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900 text-amber-950 dark:text-amber-200 font-black text-xs">Kurang ${formatNum(nm.gap)} ${nm.unit}</span>
-                    <div class="text-[11px] text-slate-600 dark:text-slate-400 mt-1">ke ${escapeHtml(nm.nextTargetLabel)}</div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-           </div>`
-        : '';
-
-      const incentiveBoxHtml = (state.showIncentives && ev.tier !== 'NON')
-        ? `<div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-5 gap-3.5 shadow-sm">
-            <div>
-              <div class="text-xs uppercase text-slate-400 font-bold">Baseline</div>
-              <div class="text-sm sm:text-base font-extrabold mt-0.5">${formatRupiah(ev.baselineRp)}</div>
-            </div>
-            <div>
-              <div class="text-xs uppercase text-slate-400 font-bold">Growth (≥115%)</div>
-              <div class="text-sm sm:text-base font-extrabold mt-0.5">${formatRupiah(ev.growthRp)}</div>
-            </div>
-            <div>
-              <div class="text-xs uppercase text-slate-400 font-bold">Blind (≥4 Br.)</div>
-              <div class="text-sm sm:text-base font-extrabold mt-0.5">${formatRupiah(ev.blindRp)}</div>
-            </div>
-            <div>
-              <div class="text-xs uppercase text-slate-400 font-bold">League (${ev.leagueTier})</div>
-              <div class="text-sm sm:text-base font-extrabold mt-0.5">${formatRupiah(ev.leagueRp)}</div>
-            </div>
-            <div class="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l border-slate-700 pt-2.5 sm:pt-0 sm:pl-3.5">
-              <div class="text-xs uppercase text-emerald-400 font-bold">${ev.portfolioValid ? 'Est. Cair' : 'Potensi Tertahan'}</div>
-              <div class="text-base sm:text-lg font-black text-emerald-400 mt-0.5">${formatRupiah(ev.portfolioValid ? ev.totalIncentiveRp : ev.potentialIncentiveRp)}</div>
-            </div>
-           </div>`
-        : '';
-
-      const tableRowsHtml = activeRows.map(r => {
-        const isAchieved = r.baselineRp > 0;
-        const statusBadge = r.vol26 === 0
-          ? `<span class="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-extrabold text-xs">BELUM AMBIL</span>`
-          : (isAchieved
-              ? `<span class="px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs">✅ ${escapeHtml(r.strataLabel)}</span>`
-              : `<span class="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 font-extrabold text-xs">⏳ Kurang ${formatNum(r.gapToTarget)} ${r.unit}</span>`);
-
-        const preNote = r.preV26 > 0
-          ? `<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">+${formatNum(r.preV26)} ${r.unit} (Jan–Jun)</div>`
-          : '';
-
-        const totalProdRp = r.baselineRp + r.growthRp + (r.blindRp || 0);
-
-        return `
-          <tr class="hover:bg-stone-50 dark:hover:bg-slate-800/60 border-b border-stone-200/80 dark:border-slate-800 transition-colors">
-            <td class="py-3 px-3.5">
-              <div class="font-extrabold text-slate-900 dark:text-white text-sm">${escapeHtml(r.name)}</div>
-              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">${escapeHtml(r.portfolio)}</div>
-            </td>
-            <td class="py-3 px-3.5 text-right text-sm text-slate-700 dark:text-slate-300 font-semibold">${formatNum(r.vol25)} ${r.unit}</td>
-            <td class="py-3 px-3.5 text-right text-sm font-black text-slate-900 dark:text-white">
-              ${formatNum(r.vol26)} ${r.unit}
-              ${preNote}
-            </td>
-            <td class="py-3 px-3.5 text-center">${statusBadge}</td>
-            ${state.showIncentives ? `<td class="py-3 px-3.5 text-right text-sm font-extrabold text-emerald-700 dark:text-emerald-400">${totalProdRp > 0 ? formatRupiah(totalProdRp) : '-'}</td>` : ''}
-          </tr>
-        `;
-      }).join('');
-
-      panel.innerHTML = `
-        <div class="space-y-5 animate-panel-enter">
-          <!-- Store Header -->
-          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3.5 pb-4 border-b border-stone-200 dark:border-slate-800">
-            <div>
-              <div class="flex items-center gap-2.5 flex-wrap">
-                <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">${escapeHtml(store.name)}</h2>
-                <select onchange="setStoreTier('${escapeAttr(store.name)}', this.value)"
-                        class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold border-2 border-stone-300 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-red-500">
-                  <option value="R1" ${ev.tier === 'R1' ? 'selected' : ''}>Skema R-1</option>
-                  <option value="R2" ${ev.tier === 'R2' ? 'selected' : ''}>Skema R-2</option>
-                  <option value="NON" ${ev.tier === 'NON' ? 'selected' : ''}>Non-Program</option>
-                </select>
-              </div>
-              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5">Sales: <b class="text-slate-900 dark:text-white">${escapeHtml(salesText)}</b> • Periode: <b class="text-slate-900 dark:text-white">${periodLbl}</b></p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2.5">
-              <button onclick="analyzeStoreWithAI('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200 text-xs sm:text-sm font-extrabold">
-                <span>✨ Saran AI</span>
-              </button>
-              <button onclick="copyWhatsAppReport('${escapeAttr(store.name)}')" class="btn-motion inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md">
-                <span>📋 Copy Laporan WA</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Status Banner & Missing Checklist -->
-          <div class="rounded-2xl p-4 sm:p-5 border-2 ${bannerStyle}">
-            <div class="text-xs sm:text-sm font-black uppercase tracking-wide mb-2.5">${bannerTitle}</div>
-            ${missingBlockHtml}
-          </div>
-
-          <!-- AI Sales Advice Box -->
-          <div id="aiStoreAdviceBox" class="hidden rounded-2xl p-4 sm:p-5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800">
-            <div class="text-xs sm:text-sm font-black text-indigo-950 dark:text-indigo-200 uppercase mb-2">✨ Saran Penawaran Produk (Asisten AI)</div>
-            <div id="aiStoreAdviceContent" class="text-sm text-indigo-950 dark:text-indigo-100 whitespace-pre-line leading-relaxed"></div>
-          </div>
-
-          <!-- Incentive Summary -->
-          ${incentiveBoxHtml}
-
-          <!-- Near Misses -->
-          ${nearMissHtml}
-
-          <!-- Product Breakdown Table -->
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <h4 class="text-xs sm:text-sm font-black uppercase tracking-wide text-slate-800 dark:text-slate-200">Rincian Transaksi Produk NSEP (${periodLbl})</h4>
-              <span class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-semibold">Total Merek: <b class="text-slate-900 dark:text-white">${ev.totalBrands}/${ev.reqTotal}</b></span>
-            </div>
-            <div class="overflow-x-auto rounded-2xl border border-stone-200 dark:border-slate-800">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-stone-100 dark:bg-slate-800 text-xs font-black uppercase text-slate-700 dark:text-slate-300 border-b border-stone-200 dark:border-slate-700">
-                    <th class="py-3 px-3.5">Merek NSEP</th>
-                    <th class="py-3 px-3.5 text-right">2025</th>
-                    <th class="py-3 px-3.5 text-right">2026</th>
-                    <th class="py-3 px-3.5 text-center">Status Target</th>
-                    ${state.showIncentives ? `<th class="py-3 px-3.5 text-right">Est. Program</th>` : ''}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${tableRowsHtml || `<tr><td colspan="5" class="py-8 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada transaksi produk NSEP pada periode ini.</td></tr>`}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function copyWhatsAppReport(storeName) {
-      const store = state.stores.find(s => s.name === storeName);
-      if (!store) return;
-
-      const ev = getEvaluatedStore(store);
-      const periodLbl = getPeriodLabel();
-
-      const achievedLines = ev.productRows
-        .filter(r => r.baselineRp > 0)
-        .map(r => {
-          const rpPart = state.showIncentives ? ` (Est. ${formatRupiah(r.baselineRp)})` : '';
-          return `  ✅ *${r.name}*: ${formatNum(r.vol26)} ${r.unit} [${r.strataLabel}]${rpPart}`;
-        });
-
-      const unachievedLines = ev.productRows
-        .filter(r => r.vol26 > 0 && r.baselineRp === 0 && r.isEligiblePortfolioForTier)
-        .map(r => {
-          const gapPart = r.gapToTarget > 0 ? ` — *Kurang ${formatNum(r.gapToTarget)} ${r.unit}* ke ${r.nextTargetLabel}` : ' — Portofolio';
-          return `  ⏳ *${r.name}*: ${formatNum(r.vol26)} ${r.unit}${gapPart}`;
-        });
-
-      const missingLines = ev.missingSummary.map(m => `  ❌ ${m}`);
-
-      const lines = [
-        `*AUDIT PROGRAM NSEP 2026 (${ev.tier})*`,
-        `Toko: *${store.name}*`,
-        `Periode: *${periodLbl} 2026*`,
-        `Komposisi Merek: *${ev.totalBrands}/${ev.reqTotal} merek* (PB: ${ev.pbCount}/2 | ${ev.tier === 'R1' ? `SP: ${ev.spCount}/3 | CP: ${ev.cpCount}/3` : `CP: ${ev.cpCount}/6`})`,
-        ``,
-        `*1. SUDAH TERCAPAI TARGET:*`,
-        achievedLines.length > 0 ? achievedLines.join('\n') : '  - Belum ada produk mencapai target volume',
-        ``,
-        `*2. SUDAH DIAMBIL TAPI BELUM TERCAPAI TARGET:*`,
-        unachievedLines.length > 0 ? unachievedLines.join('\n') : '  - Tidak ada',
-        ``,
-        `*3. KEKURANGAN SYARAT PORTOFOLIO:*`,
-        missingLines.length > 0 ? missingLines.join('\n') : '  ✔ Syarat portofolio merek sudah lengkap!'
-      ];
-
-      if (state.showIncentives && ev.tier !== 'NON') {
-        lines.push(``);
-        lines.push(`*ESTIMASI PROGRAM (${ev.portfolioValid ? 'LOLOS' : 'TERTAHAN SYARAT MEREK'}):* ${formatRupiah(ev.portfolioValid ? ev.totalIncentiveRp : ev.potentialIncentiveRp)}`);
-      }
-
-      const textToCopy = lines.join('\n');
-      const tempArea = document.createElement('textarea');
-      tempArea.value = textToCopy;
-      document.body.appendChild(tempArea);
-      tempArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(tempArea);
-
-      showToast('Laporan WA siap tempel berhasil disalin!', 'bg-emerald-300');
-    }
-
-    function exportToExcel() {
-      if (state.stores.length === 0) return;
-
-      const summaryData = [];
-      const detailData = [];
-
-      state.stores.forEach(store => {
-        const ev = getEvaluatedStore(store);
-        const rowSum = {
-          'Nama Pelanggan': store.name,
-          'Skema': ev.tier,
-          'Sales': (store.salesList || []).join(', '),
-          'Status Kelayakan': ev.status,
-          'Total Merek': ev.totalBrands,
-          'Syarat Merek': ev.reqTotal,
-          'Power Brand (Wajib 2)': ev.pbCount,
-          'Strategic Platform': ev.spCount,
-          'Core Portfolio': ev.cpCount,
-          'Total Vol 2026 (Kg/L)': ev.totalVol26,
-          'Merek Tembus Target': ev.achievedCount,
-          'Kekurangan Syarat': ev.missingSummary.join(' | ') || 'Lengkap'
-        };
-        if (state.showIncentives) {
-          rowSum['Est. Baseline (Rp)'] = ev.baselineRp;
-          rowSum['Est. Growth (Rp)'] = ev.growthRp;
-          rowSum['Est. Blind Bonus (Rp)'] = ev.blindRp;
-          rowSum['Est. League (Rp)'] = ev.leagueRp;
-          rowSum['Est. Total Cair (Rp)'] = ev.totalIncentiveRp;
-        }
-        summaryData.push(rowSum);
-
-        ev.productRows.forEach(pr => {
-          if (pr.vol25 > 0 || pr.vol26 > 0) {
-            const rowDet = {
-              'Nama Pelanggan': store.name,
-              'Skema': ev.tier,
-              'Portofolio': pr.portfolio,
-              'Merek NSEP': pr.name,
-              'Satuan': pr.unit,
-              'Vol 2025': pr.vol25,
-              'Vol 2026': pr.vol26,
-              'Growth Vol': pr.growthVol,
-              'Status Target': pr.strataLabel,
-              'Gap ke Target Berikutnya': pr.gapToTarget
-            };
-            if (state.showIncentives) {
-              rowDet['Est. Baseline (Rp)'] = pr.baselineRp;
-              rowDet['Est. Growth (Rp)'] = pr.growthRp;
-              rowDet['Est. Blind (Rp)'] = pr.blindRp || 0;
-            }
-            detailData.push(rowDet);
-          }
-        });
-      });
-
-      const wb = XLSX.utils.book_new();
-      const ws1 = XLSX.utils.json_to_sheet(summaryData);
-      const ws2 = XLSX.utils.json_to_sheet(detailData);
-      XLSX.utils.book_append_sheet(wb, ws1, 'Rekap Pelanggan');
-      XLSX.utils.book_append_sheet(wb, ws2, 'Rincian Produk');
-      XLSX.writeFile(wb, `Rekap_Santani_NSEP_2026_${getPeriodLabel()}.xlsx`);
-      showToast('File Excel rekap berhasil di-download!', 'bg-emerald-300');
-    }
-
-    // =========================================================================
-    // 7. MOTION GRAPHICS, SCROLL OBSERVER & UTILITIES
-    // =========================================================================
     function formatNum(num) {
-      return Number(num || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+      return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(num || 0);
     }
 
     function formatRupiah(num) {
-      return 'Rp ' + Math.round(Number(num || 0)).toLocaleString('id-ID');
+      return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(num || 0);
     }
 
     function escapeHtml(str) {
-      return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+      return String(str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
     }
 
     function escapeAttr(str) {
       return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
 
-    function showToast(msg, bgClass = 'bg-emerald-300') {
+    function showToast(msg, bgClass = 'bg-emerald-400') {
       const toast = document.getElementById('toastNotification');
-      if (!toast) return;
-      toast.className = `fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl text-slate-950 font-extrabold text-sm shadow-2xl animate-panel-enter ${bgClass}`;
+      toast.className = `fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl text-slate-950 font-extrabold text-sm shadow-2xl transition-all animate-panel-enter ${bgClass}`;
       toast.textContent = msg;
       toast.classList.remove('hidden');
-      setTimeout(() => {
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
         toast.classList.add('hidden');
-      }, 3800);
+      }, 3200);
     }
-
-    // Click Ripple Motion Handler
-    document.addEventListener('click', (e) => {
-      const target = e.target.closest('.btn-motion');
-      if (!target) return;
-      const rect = target.getBoundingClientRect();
-      const circle = document.createElement('span');
-      const diameter = Math.max(rect.width, rect.height);
-      const radius = diameter / 2;
-      circle.style.width = circle.style.height = `${diameter}px`;
-      circle.style.left = `${e.clientX - rect.left - radius}px`;
-      circle.style.top = `${e.clientY - rect.top - radius}px`;
-      circle.classList.add('click-ripple');
-      const oldRipple = target.querySelector('.click-ripple');
-      if (oldRipple) oldRipple.remove();
-      target.appendChild(circle);
-    });
-
-    // Window & List Scroll Progress Motion
-    window.addEventListener('scroll', () => {
-      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      const scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
-      const bar = document.getElementById('scrollProgressBar');
-      if (bar) bar.style.width = `${Math.min(100, Math.max(0, scrolled))}%`;
-    }, { passive: true });
 
     function handleListScroll() {
       const el = document.getElementById('storeListContainer');
-      const bar = document.getElementById('scrollProgressBar');
-      if (!el || !bar) return;
-      const maxScroll = el.scrollHeight - el.clientHeight;
-      if (maxScroll > 0) {
-        const pct = (el.scrollTop / maxScroll) * 100;
-        bar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+      if (!el) return;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) {
+        if (listRenderLimit < state.stores.length) {
+          listRenderLimit += 60;
+          renderStoreList();
+        }
       }
     }
 
     function observeScrollReveals() {
-      const observer = new IntersectionObserver((entries) => {
+      const els = document.querySelectorAll('.reveal-on-scroll');
+      if (!('IntersectionObserver' in window)) {
+        els.forEach(el => el.classList.add('is-visible'));
+        return;
+      }
+      const obs = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
           }
         });
       }, { threshold: 0.08 });
-
-      document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+      els.forEach(el => obs.observe(el));
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const dropArea = document.getElementById('dropArea');
-      if (dropArea) {
-        ['dragenter', 'dragover'].forEach(evtName => {
-          dropArea.addEventListener(evtName, (e) => {
-            e.preventDefault();
-            dropArea.classList.add('border-red-500', 'bg-red-50/40');
-          });
+    window.addEventListener('scroll', () => {
+      const bar = document.getElementById('scrollProgressBar');
+      if (!bar) return;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? Math.min(100, (window.scrollY / docHeight) * 100) : 0;
+      bar.style.width = pct + '%';
+    }, { passive: true });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-motion');
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      const diameter = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = `${diameter}px`;
+      ripple.style.left = `${e.clientX - rect.left - diameter / 2}px`;
+      ripple.style.top = `${e.clientY - rect.top - diameter / 2}px`;
+      ripple.className = 'click-ripple';
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    });
+
+    // Drag & Drop File Support
+    const dropArea = document.getElementById('dropArea');
+    if (dropArea) {
+      ['dragenter', 'dragover'].forEach(evName => {
+        dropArea.addEventListener(evName, e => {
+          e.preventDefault();
+          dropArea.classList.add('border-red-500', 'bg-red-50/40', 'dark:bg-red-950/20');
         });
-        ['dragleave', 'drop'].forEach(evtName => {
-          dropArea.addEventListener(evtName, (e) => {
-            e.preventDefault();
-            dropArea.classList.remove('border-red-500', 'bg-red-50/40');
-          });
+      });
+      ['dragleave', 'drop'].forEach(evName => {
+        dropArea.addEventListener(evName, e => {
+          e.preventDefault();
+          dropArea.classList.remove('border-red-500', 'bg-red-50/40', 'dark:bg-red-950/20');
         });
-        dropArea.addEventListener('drop', (e) => {
-          const files = e.dataTransfer?.files;
-          if (files && files.length > 0) {
-            processFiles(Array.from(files), false);
-          }
-        });
-      }
+      });
+      dropArea.addEventListener('drop', e => {
+        if (e.dataTransfer?.files?.length) {
+          processFiles(Array.from(e.dataTransfer.files), false);
+        }
+      });
+    }
+
+    window.onload = function () {
       loadStateFromStorage();
       observeScrollReveals();
-    });
+    };
   </script>
 </body>
 </html>
