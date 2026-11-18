@@ -935,14 +935,14 @@ Histori Produk: ${purchasedSummary || 'Belum ada pembelian NSEP di periode ini'}
       }
       if (item.includes('MONO AMMONIUM PHOSPHATE') || item.includes('(MAP)') || /\bMAP\b/.test(item)) return { brandId: 'CP_MAP', volKgLtr: qty };
       if (item.includes('CANKALI')) return { brandId: 'CP_CANKALI', volKgLtr: qty };
-      if (item.includes('SANTAGROW ZK') || item.includes('S.GROW ZK')) return { brandId: 'CP_SGZK', volKgLtr: qty };
-      if (item.includes('KNO3 PUTIH') || item.includes('S.GROW NOP') || item.includes('SANTAGROW NOP')) return { brandId: 'CP_KNO3', volKgLtr: qty };
+      if (item.includes('SANTAGROW ZK') || item.includes('S.GROW ZK') || /\bZK\b/.test(item)) return { brandId: 'CP_SGZK', volKgLtr: qty };
+      if (item.includes('KNO3') || item.includes('S.GROW NOP') || item.includes('SANTAGROW NOP') || /\bNOP\b/.test(item)) return { brandId: 'CP_KNO3', volKgLtr: qty };
       if (item.includes('16.16.16')) return { brandId: 'CP_161616', volKgLtr: qty };
       if (item.includes('17.17.17')) return { brandId: 'CP_171717', volKgLtr: qty };
       if (item.includes('SANTAPHOS')) return { brandId: 'CP_SANTAPHOS', volKgLtr: qty };
       if (item.includes('15.10.20')) return { brandId: 'CP_151020', volKgLtr: qty };
-      if (item.includes('KCL GRANULAR') || item.includes('SANTAGROW KCL') || item.includes('S.GROW KCL')) return { brandId: 'CP_KCL', volKgLtr: qty };
-      if (item.includes('KUDA SAKTI')) return { brandId: 'CP_TSP', volKgLtr: qty };
+      if (item.includes('KCL') || /\bMOP\b/.test(item)) return { brandId: 'CP_KCL', volKgLtr: qty };
+      if (item.includes('KUDA SAKTI') || /\bTSP\b/.test(item)) return { brandId: 'CP_TSP', volKgLtr: qty };
 
       return { brandId: null, volKgLtr: qty };
     }
